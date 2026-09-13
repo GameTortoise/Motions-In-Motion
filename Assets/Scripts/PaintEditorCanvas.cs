@@ -26,6 +26,11 @@ public sealed class PaintEditorCanvas : MonoBehaviour
     [SerializeField, Range(2, 64)] private int markerSize = 32;
     [SerializeField, Range(2, 64)] private int eraserSize = 24;
 
+    [Header("World drawing")]
+    [SerializeField] private Vector3 worldSpawnPosition = Vector3.zero;
+    [SerializeField, Min(1f)] private float worldPixelsPerUnit = 100f;
+    [SerializeField] private int worldSortingOrder = 10;
+
     private Canvas rootCanvas;
     private GraphicRaycaster raycaster;
     private RectTransform drawingRect;
@@ -172,6 +177,12 @@ public sealed class PaintEditorCanvas : MonoBehaviour
             AddColorButton(toolbar.transform, "Yellow", Color.yellow);
             AddColorButton(toolbar.transform, "Purple", new Color32(155, 80, 220, 255));
             AddColorButton(toolbar.transform, "Orange", new Color32(255, 140, 25, 255));
+            AddSpacer(toolbar.transform, 8f);
+        }
+        else
+        {
+            CreateButton("Make Object", toolbar.transform, new Color32(46, 125, 88, 255),
+                () => CreateWorldDrawingGameObject(), 112f);
             AddSpacer(toolbar.transform, 8f);
         }
 
@@ -346,6 +357,115 @@ public sealed class PaintEditorCanvas : MonoBehaviour
         penTexture.SetPixels32(penPixels);
         markerTexture.Apply(false);
         penTexture.Apply(false);
+    }
+
+    /// <summary>
+    /// Creates the drawn black-pen layer as a new world-space GameObject.
+    /// Other scripts can call this method directly and use the returned object.
+    /// </summary>
+    public GameObject CreateWorldDrawingGameObject()
+    {
+        if (!TryGetVisiblePenBounds(out var penBounds))
+        {
+            Debug.LogWarning("Draw something before creating a world object.", this);
+            return null;
+        }
+
+        // This is the point where the world GameObject is created.
+        var worldDrawing = new GameObject("Black Pen Drawing");
+        worldDrawing.transform.position = worldSpawnPosition;
+
+        const int transparentPadding = 2;
+        var croppedWidth = penBounds.width + transparentPadding * 2;
+        var croppedHeight = penBounds.height + transparentPadding * 2;
+        var croppedPixels = new Color32[croppedWidth * croppedHeight];
+        Array.Fill(croppedPixels, Transparent);
+        for (var y = 0; y < penBounds.height; y++)
+        for (var x = 0; x < penBounds.width; x++)
+        {
+            var sourceIndex = (penBounds.yMin + y) * textureWidth + penBounds.xMin + x;
+            var destinationIndex = (y + transparentPadding) * croppedWidth + x + transparentPadding;
+            croppedPixels[destinationIndex] = penPixels[sourceIndex];
+        }
+
+        var worldTexture = new Texture2D(croppedWidth, croppedHeight, TextureFormat.RGBA32, false)
+        {
+            name = "Black Pen Drawing Texture",
+            filterMode = FilterMode.Bilinear,
+            wrapMode = TextureWrapMode.Clamp
+        };
+        worldTexture.SetPixels32(croppedPixels);
+        worldTexture.Apply(false);
+
+        var sprite = Sprite.Create(
+            worldTexture,
+            new Rect(0f, 0f, croppedWidth, croppedHeight),
+            new Vector2(0.5f, 0.5f),
+            worldPixelsPerUnit,
+            0,
+            SpriteMeshType.Tight,
+            Vector4.zero,
+            true);
+        sprite.name = "Black Pen Drawing Sprite";
+
+        var spriteRenderer = worldDrawing.AddComponent<SpriteRenderer>();
+        spriteRenderer.sprite = sprite;
+        spriteRenderer.sortingOrder = worldSortingOrder;
+
+        var polygonCollider = worldDrawing.AddComponent<PolygonCollider2D>();
+        CopySpritePhysicsShape(sprite, polygonCollider);
+        worldDrawing.AddComponent<Rigidbody2D>();
+
+        return worldDrawing;
+    }
+
+    private bool TryGetVisiblePenBounds(out RectInt bounds)
+    {
+        bounds = default;
+        if (penPixels == null || penPixels.Length == 0)
+            return false;
+
+        var minX = textureWidth;
+        var minY = textureHeight;
+        var maxX = -1;
+        var maxY = -1;
+        for (var y = 0; y < textureHeight; y++)
+        for (var x = 0; x < textureWidth; x++)
+        {
+            if (penPixels[y * textureWidth + x].a == 0)
+                continue;
+
+            minX = Mathf.Min(minX, x);
+            minY = Mathf.Min(minY, y);
+            maxX = Mathf.Max(maxX, x);
+            maxY = Mathf.Max(maxY, y);
+        }
+
+        if (maxX < minX || maxY < minY)
+            return false;
+
+        bounds = new RectInt(minX, minY, maxX - minX + 1, maxY - minY + 1);
+        return true;
+    }
+
+    private static void CopySpritePhysicsShape(Sprite sprite, PolygonCollider2D polygonCollider)
+    {
+        var shapeCount = sprite.GetPhysicsShapeCount();
+        if (shapeCount == 0)
+        {
+            polygonCollider.enabled = false;
+            Debug.LogWarning("Unity could not generate a polygon outline for this drawing.", polygonCollider);
+            return;
+        }
+
+        polygonCollider.pathCount = shapeCount;
+        var points = new List<Vector2>();
+        for (var pathIndex = 0; pathIndex < shapeCount; pathIndex++)
+        {
+            points.Clear();
+            sprite.GetPhysicsShape(pathIndex, points);
+            polygonCollider.SetPath(pathIndex, points);
+        }
     }
 
     private void SelectTool(PaintTool tool)

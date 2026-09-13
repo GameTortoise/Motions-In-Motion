@@ -122,3 +122,6 @@ MonoBehaviour:
   penSize: 20
   markerSize: 32
   eraserSize: 24
+  worldSpawnPosition: {x: 0, y: 0, z: 0}
+  worldPixelsPerUnit: 100
+  worldSortingOrder: 10
