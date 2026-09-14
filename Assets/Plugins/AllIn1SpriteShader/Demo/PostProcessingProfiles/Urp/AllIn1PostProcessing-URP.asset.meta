@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 93a6cccfd37450b4fbd8eec2f4cc77f4
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 156513
+  packageName: All In 1 Sprite Shader
+  packageVersion: 4.68
+  assetPath: Assets/Plugins/AllIn1SpriteShader/Demo/PostProcessingProfiles/Urp/AllIn1PostProcessing-URP.asset
+  uploadId: 919916

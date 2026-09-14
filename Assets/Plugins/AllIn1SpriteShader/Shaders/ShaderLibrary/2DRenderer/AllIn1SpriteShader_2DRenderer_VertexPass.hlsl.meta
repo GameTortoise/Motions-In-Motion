@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: a3d20933a82e6e5458ed3502ae2dbebb
+ShaderIncludeImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 156513
+  packageName: All In 1 Sprite Shader
+  packageVersion: 4.68
+  assetPath: Assets/Plugins/AllIn1SpriteShader/Shaders/ShaderLibrary/2DRenderer/AllIn1SpriteShader_2DRenderer_VertexPass.hlsl
+  uploadId: 919916
