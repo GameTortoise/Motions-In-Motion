@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 20a889619f1033c4497fa398bd65d8a4
+ShaderIncludeImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 156513
+  packageName: All In 1 Sprite Shader
+  packageVersion: 4.68
+  assetPath: Assets/Plugins/AllIn1SpriteShader/Shaders/ShaderLibrary/2DRenderer/AllIn1SpriteShader_2DRenderer_FragmentPass.hlsl
+  uploadId: 919916

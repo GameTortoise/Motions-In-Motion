@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: 202ffec9202f22e478034613d6beb49c
+ShaderImporter:
+  externalObjects: {}
+  defaultTextures: []
+  nonModifiableTextures: []
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 156513
+  packageName: All In 1 Sprite Shader
+  packageVersion: 4.68
+  assetPath: Assets/Plugins/AllIn1SpriteShader/Shaders/AllIn1Urp2dRenderer.shader
+  uploadId: 919916
