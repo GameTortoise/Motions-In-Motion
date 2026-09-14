@@ -416,6 +416,10 @@ public sealed class PaintEditorCanvas : MonoBehaviour
         CopySpritePhysicsShape(sprite, polygonCollider);
         worldDrawing.AddComponent<Rigidbody2D>();
 
+        // MainGame's car claims this object here and turns it into its next wheel.
+        CarDrawingWheelInstaller.TryInstallDrawing(worldDrawing);
+        SetOpen(false);
+
         return worldDrawing;
     }
 
