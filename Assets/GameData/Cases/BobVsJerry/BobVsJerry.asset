@@ -12,7 +12,37 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5e6971ff3d637f14aabae16a22ce31d3, type: 3}
   m_Name: BobVsJerry
   m_EditorClassIdentifier: Assembly-CSharp::CaseData
-  caseName: 
-  caseDescription: 
-  caseAnswer: 
-  evidence: []
+  caseName: Bob vs Jerry the Goat
+  caseDescription: "The Plaintiff, Bob, alleges that the Defendant, Jerry the Goat, unlawfully damaged and stole a portion of his property by eating one of the legs of Bob\u2019s wooden living room table made from mostly smoked walnut and some small amounts of oak. Bob brings this action against Jerry on the grounds of vandalism and grand theft, alleging that the value of the property consumed by Jerry exceeds $950. Jerry the Goat disputes the allegations and maintains that the table leg was a perfectly reasonable snack.\r\n"
+  caseAnswer: 'Guilty on the charge of vandalism '
+  evidence:
+  - evidenceName: Evidence A
+    description: "Jerry\u2019s favorite food was in the 2nd floor kitchen at 5:30pm and Bob\u2019s 1st floor living room window was open from 4:00pm to 5:35pm."
+    image: {fileID: 0}
+  - evidenceName: Evidence B
+    description: "Jerry was out with friends from 6:00pm to 8:30pm 2 houses over, but returned to Bob\u2019s house by 8:05pm. Jerry stated that he was full and couldn\u2019t eat because he had eaten \u201Ca tasty, smoky snack\u201D"
+    image: {fileID: 0}
+  - evidenceName: Evidence C
+    description: "Jerry\u2019s favorite food is a full chicken that has been roasted and grilled with smoked hickory.\r\n"
+    image: {fileID: 0}
+  - evidenceName: Evidence D
+    description: 'Bob purchased the table for $1,240 about six months before the incident. The table was made mostly of smoked walnut wood. According to the receipt, each individual table leg was valued at approximately $210 for repair.
+
+'
+    image: {fileID: 0}
+  - evidenceName: Evidence E
+    description: 'At 5:17pm, Bob''s neighbor, Mrs. Bobderson, heard what she described as a "large cracking sound" coming from Bob''s house. About one minute later, she saw Jerry the Goat standing outside Bob''s living room window with a piece of dark-colored material in his mouth.
+
+'
+    image: {fileID: 0}
+  - evidenceName: Evidence F
+    description: 'A manufacturers guide from Suspicious Wood & Co states that the table legs were made from oak.
+
+'
+    image: {fileID: 0}
+  - evidenceName: Evidence G
+    description: "The bowl containing Jerry\u2019s favorite food was found broken on the countertop. The chicken appeared smashed, leaving it impossible to tell if it was eaten or not.\r\n"
+    image: {fileID: 0}
+  - evidenceName: Evidence H
+    description: 
+    image: {fileID: 5896200882139721795, guid: b61f46a65bc965246893cd0626d989b7, type: 3}
