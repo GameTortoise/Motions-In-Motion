@@ -26,6 +26,7 @@ public sealed class NetworkWheelPaintSession : MonoBehaviour
 {
     [Header("Team")]
     [SerializeField] private bool defendant = true;
+    [SerializeField] private bool showEditorForHostWhenAlone = true;
 
     [Header("Scene references")]
     [SerializeField] private PaintEditorCanvas paintEditorPrefab;
@@ -47,7 +48,7 @@ public sealed class NetworkWheelPaintSession : MonoBehaviour
     private uint appliedOtherRevision;
     private bool serverSubscribed;
     private bool clientSubscribed;
-    private bool localPresentationConfigured;
+    private bool playerEventsSubscribed;
     private bool instantiatedLocalEditor;
     private Transform localEditorOriginalParent;
 
@@ -67,6 +68,7 @@ public sealed class NetworkWheelPaintSession : MonoBehaviour
 
         if (manager != null)
         {
+            RemovePlayerEventSubscriptions();
             manager.UnregisterEvents(OnNetworkStarted, OnNetworkStopped);
             RemoveServerSubscriptions();
             RemoveClientSubscriptions();
@@ -88,6 +90,7 @@ public sealed class NetworkWheelPaintSession : MonoBehaviour
         {
             clientSubscribed = true;
             manager.Subscribe<WheelDrawingState>(OnDrawingStateReceived, false);
+            AddPlayerEventSubscriptions();
             ConfigureLocalPresentation();
         }
     }
@@ -98,6 +101,7 @@ public sealed class NetworkWheelPaintSession : MonoBehaviour
             RemoveServerSubscriptions();
         else
         {
+            RemovePlayerEventSubscriptions();
             RemoveClientSubscriptions();
             RestoreRegularPresentation();
         }
@@ -105,22 +109,16 @@ public sealed class NetworkWheelPaintSession : MonoBehaviour
 
     private void ConfigureLocalPresentation()
     {
-        if (localPresentationConfigured || manager == null || !manager.isClient)
+        if (manager == null || !manager.isClient)
             return;
 
-        localPresentationConfigured = true;
         var isLobbyHost = manager.isHost;
-        SetRegularPresentationVisible(isLobbyHost);
+        var showEditor = !isLobbyHost || (showEditorForHostWhenAlone && manager.playerCount <= 1);
+        SetRegularPresentationVisible(!showEditor);
 
-        if (isLobbyHost)
+        if (!showEditor)
         {
-            var hostEditor = FindAnyObjectByType<PaintEditorCanvas>(FindObjectsInactive.Include);
-            if (hostEditor != null)
-            {
-                hostEditor.SetPermanentOpen(false);
-                hostEditor.SetToggleButtonVisible(false);
-                hostEditor.SetOpen(false);
-            }
+            HideLocalEditor();
             return;
         }
 
@@ -137,10 +135,20 @@ public sealed class NetworkWheelPaintSession : MonoBehaviour
             return;
         }
 
-        localEditorOriginalParent = localEditor.transform.parent;
-        localEditor.transform.SetParent(null, false);
+        if (localEditorOriginalParent == null && localEditor.transform.parent != null)
+            localEditorOriginalParent = localEditor.transform.parent;
+        if (localEditor.transform.parent != null)
+            localEditor.transform.SetParent(null, false);
+
+        var editorRect = (RectTransform)localEditor.transform;
+        editorRect.anchorMin = Vector2.zero;
+        editorRect.anchorMax = Vector2.one;
+        editorRect.anchoredPosition = Vector2.zero;
+        editorRect.sizeDelta = Vector2.zero;
+        editorRect.pivot = new Vector2(0.5f, 0.5f);
         localEditor.transform.localScale = Vector3.one;
         localEditor.name = defendant ? "Defendant Wheel Paint Editor" : "Other Team Wheel Paint Editor";
+        localEditor.DrawingSubmitted -= SubmitLocalDrawing;
         localEditor.DrawingSubmitted += SubmitLocalDrawing;
         localEditor.SetToggleButtonVisible(false);
         localEditor.SetPermanentOpen(true);
@@ -148,15 +156,52 @@ public sealed class NetworkWheelPaintSession : MonoBehaviour
 
     private bool SubmitLocalDrawing(byte[] pngData)
     {
-        if (manager == null || !manager.isClient || manager.isHost || !IsValidDrawing(pngData))
+        if (manager == null || !manager.isClient || !IsValidDrawing(pngData))
             return false;
 
-        manager.SendToServer(new WheelDrawingUpload
+        var upload = new WheelDrawingUpload
         {
             defendant = defendant,
             pngData = pngData
-        }, Channel.ReliableOrdered);
+        };
+
+        if (manager.isHost)
+            OnDrawingUploaded(manager.localPlayer, upload, true);
+        else
+            manager.SendToServer(upload, Channel.ReliableOrdered);
         return true;
+    }
+
+    private void AddPlayerEventSubscriptions()
+    {
+        if (playerEventsSubscribed || manager == null)
+            return;
+
+        playerEventsSubscribed = true;
+        manager.onPlayerJoined += OnPlayerCountChanged;
+        manager.onPlayerLeft += OnPlayerCountChanged;
+    }
+
+    private void RemovePlayerEventSubscriptions()
+    {
+        if (!playerEventsSubscribed || manager == null)
+            return;
+
+        playerEventsSubscribed = false;
+        manager.onPlayerJoined -= OnPlayerCountChanged;
+        manager.onPlayerLeft -= OnPlayerCountChanged;
+    }
+
+    private void OnPlayerCountChanged(PlayerID player, bool isReconnect, bool asServer)
+    {
+        if (!asServer)
+            ConfigureLocalPresentation();
+    }
+
+    private void OnPlayerCountChanged(PlayerID player, bool asServer)
+    {
+        if (!asServer)
+            ConfigureLocalPresentation();
     }
 
     private void OnDrawingUploaded(PlayerID sender, WheelDrawingUpload upload, bool asServer)
@@ -249,8 +294,15 @@ public sealed class NetworkWheelPaintSession : MonoBehaviour
 
     private void RestoreRegularPresentation()
     {
-        localPresentationConfigured = false;
         SetRegularPresentationVisible(true);
+
+        HideLocalEditor();
+    }
+
+    private void HideLocalEditor()
+    {
+        if (localEditor == null)
+            localEditor = FindAnyObjectByType<PaintEditorCanvas>(FindObjectsInactive.Include);
 
         if (localEditor == null)
             return;

@@ -79,9 +79,9 @@ public sealed class PaintEditorCanvas : MonoBehaviour
 
     private void Awake()
     {
-        transform.localScale = Vector3.one;
         rootCanvas = GetComponent<Canvas>();
         raycaster = GetComponent<GraphicRaycaster>();
+        ConfigureFullscreenCanvas();
         BuildInterface();
         CreateDrawingTextures();
         SetOpen(startOpen);
@@ -145,9 +145,13 @@ public sealed class PaintEditorCanvas : MonoBehaviour
         if (raycaster == null)
             raycaster = GetComponent<GraphicRaycaster>();
 
-        transform.localScale = Vector3.one;
+        if (!gameObject.activeSelf)
+            gameObject.SetActive(true);
+        ConfigureFullscreenCanvas();
         rootCanvas.enabled = open;
         raycaster.enabled = open;
+        if (open)
+            Canvas.ForceUpdateCanvases();
         if (drawing)
             FinishStroke();
         drawing = false;
@@ -165,10 +169,25 @@ public sealed class PaintEditorCanvas : MonoBehaviour
         showToggleButton = visible;
     }
 
+    private void ConfigureFullscreenCanvas()
+    {
+        var rectTransform = (RectTransform)transform;
+        rectTransform.anchorMin = Vector2.zero;
+        rectTransform.anchorMax = Vector2.one;
+        rectTransform.anchoredPosition = Vector2.zero;
+        rectTransform.sizeDelta = Vector2.zero;
+        rectTransform.pivot = new Vector2(0.5f, 0.5f);
+        rectTransform.localRotation = Quaternion.identity;
+        rectTransform.localScale = Vector3.one;
+
+        rootCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
+        rootCanvas.overrideSorting = true;
+        rootCanvas.sortingOrder = 500;
+    }
+
     private void BuildInterface()
     {
-        rootCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
-        rootCanvas.sortingOrder = 500;
+        ConfigureFullscreenCanvas();
 
         var scaler = GetComponent<CanvasScaler>();
         scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
