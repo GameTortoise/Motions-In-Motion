@@ -64,16 +64,16 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 0.105882354}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 10905, guid: 0000000000000000f000000000000000, type: 0}
-  m_Type: 1
-  m_PreserveAspect: 0
+  m_Sprite: {fileID: 4502059151166531557, guid: d0b812af2547bd345b45c5bd3eb0eabe, type: 3}
+  m_Type: 0
+  m_PreserveAspect: 1
   m_FillCenter: 1
   m_FillMethod: 4
   m_FillAmount: 1
@@ -149,6 +149,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 09d516a15ac130949ac6c7786dcb6001, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EvidenceCardUI
+  noteBackground: {fileID: 5884412735262400619}
+  noteVariants:
+  - {fileID: 4502059151166531557, guid: d0b812af2547bd345b45c5bd3eb0eabe, type: 3}
+  - {fileID: -2654900912091873650, guid: a5c3e97dee48c35438ab28c6b0752556, type: 3}
+  - {fileID: -2634547011037757618, guid: d63991ca90bcef74ea10b013788f08f3, type: 3}
+  - {fileID: 323230245057533145, guid: 302792815ae704547909174ed0540238, type: 3}
   evidenceNameText: {fileID: 7247826888460297008}
   descriptionText: {fileID: 7051515314946873669}
   evidenceImage: {fileID: 1217414269916116351}

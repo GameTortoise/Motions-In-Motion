@@ -11,6 +11,13 @@ public class EvidenceSelectionUI : MonoBehaviour
     public Transform evidenceContainer;
     public GameObject evidenceCardPrefab;
 
+    [Header("Sticky Notes")]
+    [Tooltip("Sticky note backgrounds are cycled in this order for evidence cards.")]
+    public Sprite[] stickyNoteSprites;
+
+    [Tooltip("Small, uniform scale variations applied in the same order as the note backgrounds.")]
+    public float[] stickyNoteScales = { 0.94f, 1f, 0.97f, 0.92f };
+
     [Header("Selection Settings")]
     public int maxSelections = 3;
 
@@ -68,10 +75,25 @@ public class EvidenceSelectionUI : MonoBehaviour
                 continue;
             }
 
+            Sprite stickyNoteSprite = null;
+            if (stickyNoteSprites != null && stickyNoteSprites.Length > 0)
+            {
+                stickyNoteSprite = stickyNoteSprites[i % stickyNoteSprites.Length];
+            }
+
+            float uniformScale = 1f;
+            if (stickyNoteScales != null && stickyNoteScales.Length > 0)
+            {
+                uniformScale = stickyNoteScales[i % stickyNoteScales.Length];
+            }
+
             cardUI.Setup(
                 evidence,
                 i + 1,
-                this
+                this,
+                stickyNoteSprite,
+                uniformScale,
+                i % 4
             );
         }
     }
