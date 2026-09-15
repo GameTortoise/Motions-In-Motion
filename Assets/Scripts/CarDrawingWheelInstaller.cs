@@ -22,6 +22,8 @@ public sealed class CarDrawingWheelInstaller : MonoBehaviour
     private Rigidbody2D chassisBody;
     private PhysicsMaterial2D wheelMaterial;
     private float preservedRotationSpeed = -360f;
+    private Texture2D installedDrawingTexture;
+    private Sprite installedDrawingSprite;
 
     private void Awake()
     {
@@ -68,6 +70,10 @@ public sealed class CarDrawingWheelInstaller : MonoBehaviour
 
         if (wheelMaterial != null)
             Destroy(wheelMaterial);
+        if (installedDrawingSprite != null)
+            Destroy(installedDrawingSprite);
+        if (installedDrawingTexture != null)
+            Destroy(installedDrawingTexture);
     }
 
     /// <summary>
@@ -86,6 +92,12 @@ public sealed class CarDrawingWheelInstaller : MonoBehaviour
     {
         if (drawing == null || wheelMounts.Count == 0)
             return;
+
+        var drawingRenderer = drawing.GetComponent<SpriteRenderer>();
+        var nextSprite = drawingRenderer != null ? drawingRenderer.sprite : null;
+        var nextTexture = nextSprite != null ? nextSprite.texture : null;
+        var previousSprite = installedDrawingSprite;
+        var previousTexture = installedDrawingTexture;
 
         drawing.transform.SetParent(null, true);
         drawing.transform.rotation = transform.rotation;
@@ -113,6 +125,100 @@ public sealed class CarDrawingWheelInstaller : MonoBehaviour
             wheel.transform.rotation = transform.rotation;
             PrepareWheel(wheel, true);
             installedWheels.Add(wheel);
+        }
+
+        installedDrawingSprite = nextSprite;
+        installedDrawingTexture = nextTexture;
+        if (previousSprite != null && previousSprite != installedDrawingSprite)
+            Destroy(previousSprite);
+        if (previousTexture != null && previousTexture != installedDrawingTexture)
+            Destroy(previousTexture);
+    }
+
+    public bool InstallPngAsWheels(byte[] pngData, int maximumDimension = 2048)
+    {
+        if (!TryReadPngSize(pngData, out var width, out var height) ||
+            width > maximumDimension || height > maximumDimension)
+            return false;
+
+        var texture = new Texture2D(2, 2, TextureFormat.RGBA32, false)
+        {
+            name = "Network Wheel Drawing Texture",
+            filterMode = FilterMode.Bilinear,
+            wrapMode = TextureWrapMode.Clamp
+        };
+
+        if (!texture.LoadImage(pngData, false) || texture.width != width || texture.height != height)
+        {
+            Destroy(texture);
+            return false;
+        }
+
+        var sprite = Sprite.Create(
+            texture,
+            new Rect(0f, 0f, texture.width, texture.height),
+            new Vector2(0.5f, 0.5f),
+            100f,
+            0,
+            SpriteMeshType.Tight,
+            Vector4.zero,
+            true);
+        sprite.name = "Network Wheel Drawing Sprite";
+
+        var drawing = new GameObject("Network Wheel Drawing");
+        var spriteRenderer = drawing.AddComponent<SpriteRenderer>();
+        spriteRenderer.sprite = sprite;
+        spriteRenderer.sortingOrder = 10;
+
+        var polygonCollider = drawing.AddComponent<PolygonCollider2D>();
+        CopySpritePhysicsShape(sprite, polygonCollider);
+        drawing.AddComponent<Rigidbody2D>();
+        InstallDrawingAsWheels(drawing);
+        return true;
+    }
+
+    public static bool TryReadPngSize(byte[] pngData, out int width, out int height)
+    {
+        width = 0;
+        height = 0;
+        if (pngData == null || pngData.Length < 24)
+            return false;
+
+        if (pngData[0] != 137 || pngData[1] != 80 || pngData[2] != 78 || pngData[3] != 71 ||
+            pngData[4] != 13 || pngData[5] != 10 || pngData[6] != 26 || pngData[7] != 10 ||
+            pngData[12] != 73 || pngData[13] != 72 || pngData[14] != 68 || pngData[15] != 82)
+            return false;
+
+        width = ReadBigEndianInt(pngData, 16);
+        height = ReadBigEndianInt(pngData, 20);
+        return width > 0 && height > 0;
+    }
+
+    private static int ReadBigEndianInt(byte[] data, int offset)
+    {
+        return (data[offset] << 24) |
+               (data[offset + 1] << 16) |
+               (data[offset + 2] << 8) |
+               data[offset + 3];
+    }
+
+    private static void CopySpritePhysicsShape(Sprite sprite, PolygonCollider2D polygonCollider)
+    {
+        var shapeCount = sprite.GetPhysicsShapeCount();
+        if (shapeCount == 0)
+        {
+            polygonCollider.enabled = false;
+            Debug.LogWarning("Unity could not generate a polygon outline for this drawing.", polygonCollider);
+            return;
+        }
+
+        polygonCollider.pathCount = shapeCount;
+        var points = new List<Vector2>();
+        for (var pathIndex = 0; pathIndex < shapeCount; pathIndex++)
+        {
+            points.Clear();
+            sprite.GetPhysicsShape(pathIndex, points);
+            polygonCollider.SetPath(pathIndex, points);
         }
     }
 

@@ -5479,6 +5479,61 @@ MonoBehaviour:
   m_BlockingMask:
     serializedVersion: 2
     m_Bits: 4294967295
+--- !u!1 &9700000001
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 9700000002}
+  - component: {fileID: 9700000003}
+  m_Layer: 0
+  m_Name: Network Wheel Paint Session
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &9700000002
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9700000001}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &9700000003
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9700000001}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d2f46c24ea514036bef670247fb72897, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::NetworkWheelPaintSession
+  defendant: 1
+  paintEditorPrefab: {fileID: 121000000000006, guid: 201ea92e03ac4494bb5424c3e284c6fb, type: 3}
+  leftCar: {fileID: 314779091}
+  rightCar: {fileID: 2130553441}
+  regularPresentationObjects:
+  - {fileID: 961739749}
+  - {fileID: 9305001}
+  - {fileID: 9302001}
+  - {fileID: 9304001}
+  maximumDrawingBytes: 2097152
+  maximumDrawingDimension: 2048
 --- !u!1001 &6381394025400310523
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -5550,3 +5605,4 @@ SceneRoots:
   - {fileID: 1787493463}
   - {fileID: 1908478822}
   - {fileID: 459768754}
+  - {fileID: 9700000002}

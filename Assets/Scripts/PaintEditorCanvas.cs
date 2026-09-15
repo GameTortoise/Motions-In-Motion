@@ -48,12 +48,19 @@ public sealed class PaintEditorCanvas : MonoBehaviour
     private Color32 activeColor = new(0, 0, 0, 255);
     private Vector2Int previousPixel;
     private bool drawing;
+    private bool permanentOpen;
     private readonly List<List<PixelChange>> undoHistory = new();
     private List<PixelChange> currentStroke;
     private HashSet<int> currentStrokeIndices;
 
     private static readonly Color32 Transparent = new(0, 0, 0, 0);
     private static readonly Color32 MarkerAlpha = new(255, 255, 255, 90);
+
+    /// <summary>
+    /// Invoked when the black-pen editor submits a cropped wheel PNG. Returning true
+    /// means the receiver accepted the drawing and replaces the legacy local spawn.
+    /// </summary>
+    public event Func<byte[], bool> DrawingSubmitted;
 
     private readonly struct PixelChange
     {
@@ -89,6 +96,9 @@ public sealed class PaintEditorCanvas : MonoBehaviour
 
     private void OnGUI()
     {
+        if (permanentOpen)
+            return;
+
         var label = rootCanvas != null && rootCanvas.enabled ? "Close Paint" : "Open Paint";
         if (GUI.Button(new Rect(10f, 10f, 96f, 30f), label))
             SetOpen(rootCanvas == null || !rootCanvas.enabled);
@@ -125,6 +135,9 @@ public sealed class PaintEditorCanvas : MonoBehaviour
 
     public void SetOpen(bool open)
     {
+        if (permanentOpen && !open)
+            return;
+
         if (rootCanvas == null)
             rootCanvas = GetComponent<Canvas>();
         if (raycaster == null)
@@ -135,6 +148,13 @@ public sealed class PaintEditorCanvas : MonoBehaviour
         if (drawing)
             FinishStroke();
         drawing = false;
+    }
+
+    public void SetPermanentOpen(bool value)
+    {
+        permanentOpen = value;
+        if (value)
+            SetOpen(true);
     }
 
     private void BuildInterface()
@@ -181,7 +201,7 @@ public sealed class PaintEditorCanvas : MonoBehaviour
         }
         else
         {
-            CreateButton("Make Object", toolbar.transform, new Color32(46, 125, 88, 255),
+            CreateButton("Submit Wheel", toolbar.transform, new Color32(46, 125, 88, 255),
                 () => CreateWorldDrawingGameObject(), 112f);
             AddSpacer(toolbar.transform, 8f);
         }
@@ -371,10 +391,6 @@ public sealed class PaintEditorCanvas : MonoBehaviour
             return null;
         }
 
-        // This is the point where the world GameObject is created.
-        var worldDrawing = new GameObject("Black Pen Drawing");
-        worldDrawing.transform.position = worldSpawnPosition;
-
         const int transparentPadding = 2;
         var croppedWidth = penBounds.width + transparentPadding * 2;
         var croppedHeight = penBounds.height + transparentPadding * 2;
@@ -396,6 +412,17 @@ public sealed class PaintEditorCanvas : MonoBehaviour
         };
         worldTexture.SetPixels32(croppedPixels);
         worldTexture.Apply(false);
+
+        if (TrySubmitDrawing(worldTexture.EncodeToPNG()))
+        {
+            Destroy(worldTexture);
+            ClearDrawing();
+            return null;
+        }
+
+        // This is the point where the legacy local world GameObject is created.
+        var worldDrawing = new GameObject("Black Pen Drawing");
+        worldDrawing.transform.position = worldSpawnPosition;
 
         var sprite = Sprite.Create(
             worldTexture,
@@ -421,6 +448,41 @@ public sealed class PaintEditorCanvas : MonoBehaviour
         SetOpen(false);
 
         return worldDrawing;
+    }
+
+    private bool TrySubmitDrawing(byte[] pngData)
+    {
+        if (DrawingSubmitted == null)
+            return false;
+
+        var accepted = false;
+        foreach (var callback in DrawingSubmitted.GetInvocationList())
+        {
+            if (callback is not Func<byte[], bool> handler)
+                continue;
+
+            try
+            {
+                accepted |= handler(pngData);
+            }
+            catch (Exception exception)
+            {
+                Debug.LogException(exception, this);
+            }
+        }
+
+        return accepted;
+    }
+
+    private void ClearDrawing()
+    {
+        Array.Fill(markerPixels, Transparent);
+        Array.Fill(penPixels, Transparent);
+        undoHistory.Clear();
+        currentStroke = null;
+        currentStrokeIndices = null;
+        drawing = false;
+        ApplyPixels();
     }
 
     private bool TryGetVisiblePenBounds(out RectInt bounds)
