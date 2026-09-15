@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: da89fb36cf5d6c54e86071a4c68e542d
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 4890085278179872738
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 156513
+  packageName: All In 1 Sprite Shader
+  packageVersion: 4.68
+  assetPath: Assets/Plugins/AllIn1SpriteShader/Demo/DemoLitShaderSettings.lighting
+  uploadId: 919916

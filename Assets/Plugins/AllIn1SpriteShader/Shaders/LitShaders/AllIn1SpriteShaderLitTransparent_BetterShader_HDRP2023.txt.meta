@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: c397c4395866b3f43a53dfd559528372
+TextScriptImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 156513
+  packageName: All In 1 Sprite Shader
+  packageVersion: 4.68
+  assetPath: Assets/Plugins/AllIn1SpriteShader/Shaders/LitShaders/AllIn1SpriteShaderLitTransparent_BetterShader_HDRP2023.txt
+  uploadId: 919916

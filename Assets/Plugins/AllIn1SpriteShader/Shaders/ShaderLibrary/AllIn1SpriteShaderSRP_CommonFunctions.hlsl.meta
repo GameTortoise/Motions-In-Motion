@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 13806bf35145bcd46a31f91837eda276
+ShaderIncludeImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 156513
+  packageName: All In 1 Sprite Shader
+  packageVersion: 4.68
+  assetPath: Assets/Plugins/AllIn1SpriteShader/Shaders/ShaderLibrary/AllIn1SpriteShaderSRP_CommonFunctions.hlsl
+  uploadId: 919916
