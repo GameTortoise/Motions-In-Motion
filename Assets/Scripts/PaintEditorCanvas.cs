@@ -49,6 +49,7 @@ public sealed class PaintEditorCanvas : MonoBehaviour
     private Vector2Int previousPixel;
     private bool drawing;
     private bool permanentOpen;
+    private bool showToggleButton = true;
     private readonly List<List<PixelChange>> undoHistory = new();
     private List<PixelChange> currentStroke;
     private HashSet<int> currentStrokeIndices;
@@ -78,6 +79,7 @@ public sealed class PaintEditorCanvas : MonoBehaviour
 
     private void Awake()
     {
+        transform.localScale = Vector3.one;
         rootCanvas = GetComponent<Canvas>();
         raycaster = GetComponent<GraphicRaycaster>();
         BuildInterface();
@@ -96,7 +98,7 @@ public sealed class PaintEditorCanvas : MonoBehaviour
 
     private void OnGUI()
     {
-        if (permanentOpen)
+        if (permanentOpen || !showToggleButton)
             return;
 
         var label = rootCanvas != null && rootCanvas.enabled ? "Close Paint" : "Open Paint";
@@ -143,6 +145,7 @@ public sealed class PaintEditorCanvas : MonoBehaviour
         if (raycaster == null)
             raycaster = GetComponent<GraphicRaycaster>();
 
+        transform.localScale = Vector3.one;
         rootCanvas.enabled = open;
         raycaster.enabled = open;
         if (drawing)
@@ -155,6 +158,11 @@ public sealed class PaintEditorCanvas : MonoBehaviour
         permanentOpen = value;
         if (value)
             SetOpen(true);
+    }
+
+    public void SetToggleButtonVisible(bool visible)
+    {
+        showToggleButton = visible;
     }
 
     private void BuildInterface()

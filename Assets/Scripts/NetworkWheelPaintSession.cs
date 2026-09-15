@@ -48,6 +48,8 @@ public sealed class NetworkWheelPaintSession : MonoBehaviour
     private bool serverSubscribed;
     private bool clientSubscribed;
     private bool localPresentationConfigured;
+    private bool instantiatedLocalEditor;
+    private Transform localEditorOriginalParent;
 
     private IEnumerator Start()
     {
@@ -111,17 +113,36 @@ public sealed class NetworkWheelPaintSession : MonoBehaviour
         SetRegularPresentationVisible(isLobbyHost);
 
         if (isLobbyHost)
-            return;
-
-        if (paintEditorPrefab == null)
         {
-            Debug.LogError("Network wheel painting needs a PaintEditorCanvas prefab.", this);
+            var hostEditor = FindAnyObjectByType<PaintEditorCanvas>(FindObjectsInactive.Include);
+            if (hostEditor != null)
+            {
+                hostEditor.SetPermanentOpen(false);
+                hostEditor.SetToggleButtonVisible(false);
+                hostEditor.SetOpen(false);
+            }
             return;
         }
 
-        localEditor = Instantiate(paintEditorPrefab);
+        localEditor = FindAnyObjectByType<PaintEditorCanvas>(FindObjectsInactive.Include);
+        if (localEditor == null && paintEditorPrefab != null)
+        {
+            localEditor = Instantiate(paintEditorPrefab);
+            instantiatedLocalEditor = true;
+        }
+
+        if (localEditor == null)
+        {
+            Debug.LogError("Network wheel painting needs a PaintEditorCanvas in the scene or a prefab reference.", this);
+            return;
+        }
+
+        localEditorOriginalParent = localEditor.transform.parent;
+        localEditor.transform.SetParent(null, false);
+        localEditor.transform.localScale = Vector3.one;
         localEditor.name = defendant ? "Defendant Wheel Paint Editor" : "Other Team Wheel Paint Editor";
         localEditor.DrawingSubmitted += SubmitLocalDrawing;
+        localEditor.SetToggleButtonVisible(false);
         localEditor.SetPermanentOpen(true);
     }
 
@@ -235,8 +256,18 @@ public sealed class NetworkWheelPaintSession : MonoBehaviour
             return;
 
         localEditor.DrawingSubmitted -= SubmitLocalDrawing;
-        Destroy(localEditor.gameObject);
+        localEditor.SetPermanentOpen(false);
+        localEditor.SetToggleButtonVisible(false);
+        localEditor.SetOpen(false);
+
+        if (instantiatedLocalEditor)
+            Destroy(localEditor.gameObject);
+        else if (localEditorOriginalParent != null)
+            localEditor.transform.SetParent(localEditorOriginalParent, false);
+
         localEditor = null;
+        localEditorOriginalParent = null;
+        instantiatedLocalEditor = false;
     }
 
     private void SetRegularPresentationVisible(bool visible)
