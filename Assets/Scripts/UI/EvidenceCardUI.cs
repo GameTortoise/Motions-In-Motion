@@ -34,7 +34,7 @@ public class EvidenceCardUI : MonoBehaviour
         Sprite noteToDisplay = stickyNoteSprite;
         if (noteToDisplay == null && noteVariants != null && noteVariants.Length > 0)
         {
-            noteToDisplay = noteVariants[(evidenceNumber - 1) % noteVariants.Length];
+            noteToDisplay = noteVariants[noteStyleIndex % noteVariants.Length];
         }
 
         ApplyStickyNote(noteToDisplay, uniformScale, noteStyleIndex);
@@ -117,6 +117,10 @@ public class EvidenceCardUI : MonoBehaviour
 
         // Keep X and Y identical so none of the note artwork is distorted.
         float scale = Mathf.Clamp(uniformScale, 0.8f, 1.1f);
+        if (transform is RectTransform cardRect)
+        {
+            cardRect.pivot = new Vector2(0.5f, 0.5f);
+        }
         transform.localScale = Vector3.one * scale;
 
         Image selectedImage = selectedBorder != null
@@ -168,8 +172,8 @@ public class EvidenceCardUI : MonoBehaviour
                 break;
         }
 
-        ConfigureText(evidenceNameText, titleMin, titleMax, 11f, 18f, FontStyles.Bold);
-        ConfigureText(descriptionText, descriptionMin, descriptionMax, 8f, 13f, FontStyles.Normal);
+        ConfigureText(evidenceNameText, titleMin, titleMax, 12f, 22f, FontStyles.Bold);
+        ConfigureText(descriptionText, descriptionMin, descriptionMax, 9f, 16f, FontStyles.Normal);
 
         if (evidenceImage != null)
         {

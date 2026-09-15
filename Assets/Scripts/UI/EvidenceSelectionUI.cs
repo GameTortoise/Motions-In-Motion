@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 using TMPro;
 
 public class EvidenceSelectionUI : MonoBehaviour
@@ -12,11 +13,11 @@ public class EvidenceSelectionUI : MonoBehaviour
     public GameObject evidenceCardPrefab;
 
     [Header("Sticky Notes")]
-    [Tooltip("Sticky note backgrounds are cycled in this order for evidence cards.")]
+    [Tooltip("Sticky note backgrounds are distributed evenly, then shuffled for each screen.")]
     public Sprite[] stickyNoteSprites;
 
-    [Tooltip("Small, uniform scale variations applied in the same order as the note backgrounds.")]
-    public float[] stickyNoteScales = { 0.94f, 1f, 0.97f, 0.92f };
+    [Tooltip("Random uniform scale range used for each sticky note.")]
+    public Vector2 stickyNoteScaleRange = new Vector2(0.86f, 1.08f);
 
     [Header("Selection Settings")]
     public int maxSelections = 3;
@@ -54,6 +55,15 @@ public class EvidenceSelectionUI : MonoBehaviour
             return;
         }
 
+        ConfigureEvidenceGrid(caseData.evidence.Count);
+
+        List<int> randomizedNoteStyles = BuildRandomizedNoteStyles(
+            caseData.evidence.Count,
+            stickyNoteSprites != null && stickyNoteSprites.Length > 0
+                ? stickyNoteSprites.Length
+                : 4
+        );
+
         for (int i = 0; i < caseData.evidence.Count; i++)
         {
             EvidenceData evidence = caseData.evidence[i];
@@ -75,17 +85,16 @@ public class EvidenceSelectionUI : MonoBehaviour
                 continue;
             }
 
+            int noteStyleIndex = randomizedNoteStyles[i];
             Sprite stickyNoteSprite = null;
             if (stickyNoteSprites != null && stickyNoteSprites.Length > 0)
             {
-                stickyNoteSprite = stickyNoteSprites[i % stickyNoteSprites.Length];
+                stickyNoteSprite = stickyNoteSprites[noteStyleIndex % stickyNoteSprites.Length];
             }
 
-            float uniformScale = 1f;
-            if (stickyNoteScales != null && stickyNoteScales.Length > 0)
-            {
-                uniformScale = stickyNoteScales[i % stickyNoteScales.Length];
-            }
+            float minimumScale = Mathf.Min(stickyNoteScaleRange.x, stickyNoteScaleRange.y);
+            float maximumScale = Mathf.Max(stickyNoteScaleRange.x, stickyNoteScaleRange.y);
+            float uniformScale = Random.Range(minimumScale, maximumScale);
 
             cardUI.Setup(
                 evidence,
@@ -93,9 +102,83 @@ public class EvidenceSelectionUI : MonoBehaviour
                 this,
                 stickyNoteSprite,
                 uniformScale,
-                i % 4
+                noteStyleIndex
             );
         }
+    }
+
+    private List<int> BuildRandomizedNoteStyles(int itemCount, int styleCount)
+    {
+        styleCount = Mathf.Max(1, styleCount);
+        List<int> styles = new List<int>(itemCount);
+
+        // Fill a balanced bag first so every design is used before any repeats.
+        for (int i = 0; i < itemCount; i++)
+        {
+            styles.Add(i % styleCount);
+        }
+
+        for (int i = styles.Count - 1; i > 0; i--)
+        {
+            int swapIndex = Random.Range(0, i + 1);
+            (styles[i], styles[swapIndex]) = (styles[swapIndex], styles[i]);
+        }
+
+        return styles;
+    }
+
+    private void ConfigureEvidenceGrid(int itemCount)
+    {
+        RectTransform gridRect = evidenceContainer as RectTransform;
+        GridLayoutGroup grid = evidenceContainer.GetComponent<GridLayoutGroup>();
+
+        if (gridRect == null || grid == null || itemCount <= 0)
+        {
+            return;
+        }
+
+        Canvas.ForceUpdateCanvases();
+
+        int columns = grid.constraint == GridLayoutGroup.Constraint.FixedColumnCount
+            ? Mathf.Max(1, grid.constraintCount)
+            : Mathf.CeilToInt(Mathf.Sqrt(itemCount));
+        int rows = Mathf.CeilToInt((float)itemCount / columns);
+
+        float maximumScale = Mathf.Clamp(
+            Mathf.Max(stickyNoteScaleRange.x, stickyNoteScaleRange.y),
+            0.8f,
+            1.1f
+        );
+        float availableWidth = gridRect.rect.width;
+        float availableHeight = gridRect.rect.height;
+        float maximumVisualSize = Mathf.Min(
+            availableWidth / columns,
+            availableHeight / rows
+        );
+        float cellSize = Mathf.Max(
+            1f,
+            Mathf.Floor(maximumVisualSize / maximumScale) - 1f
+        );
+
+        // Scaling happens around the card center. Reserve half of the largest
+        // possible overhang on every outside edge of the resized grid.
+        int edgePadding = Mathf.CeilToInt(
+            Mathf.Max(0f, cellSize * (maximumScale - 1f) * 0.5f)
+        );
+        grid.padding.left = edgePadding;
+        grid.padding.right = edgePadding;
+        grid.padding.top = edgePadding;
+        grid.padding.bottom = edgePadding;
+
+        float horizontalSpace = availableWidth - (edgePadding * 2f) - (cellSize * columns);
+        float verticalSpace = availableHeight - (edgePadding * 2f) - (cellSize * rows);
+
+        grid.cellSize = Vector2.one * cellSize;
+        grid.spacing = new Vector2(
+            columns > 1 ? Mathf.Max(0f, horizontalSpace / (columns - 1)) : 0f,
+            rows > 1 ? Mathf.Max(0f, verticalSpace / (rows - 1)) : 0f
+        );
+        grid.childAlignment = TextAnchor.MiddleCenter;
     }
 
     public bool TrySelectEvidence(EvidenceData evidence)
