@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: cccdf44e0a2330943a3295398ea7d21c
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 156513
+  packageName: All In 1 Sprite Shader
+  packageVersion: 4.68
+  assetPath: Assets/Plugins/AllIn1SpriteShader/Demo/Scripts/InputKeyConverter.cs
+  uploadId: 919916
