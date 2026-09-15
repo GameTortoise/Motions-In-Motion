@@ -21,6 +21,7 @@ public sealed class CarDrawingWheelInstaller : MonoBehaviour
     private readonly List<GameObject> installedWheels = new();
     private Rigidbody2D chassisBody;
     private PhysicsMaterial2D wheelMaterial;
+    private float preservedRotationSpeed = -360f;
 
     private void Awake()
     {
@@ -42,6 +43,9 @@ public sealed class CarDrawingWheelInstaller : MonoBehaviour
         var originalWheels = GetComponentsInChildren<WheelSpinner>(true);
         System.Array.Sort(originalWheels,
             (a, b) => a.transform.position.x.CompareTo(b.transform.position.x));
+
+        if (originalWheels.Length > 0)
+            preservedRotationSpeed = originalWheels[0].RotationSpeed;
 
         foreach (var wheel in originalWheels)
         {
@@ -161,7 +165,12 @@ public sealed class CarDrawingWheelInstaller : MonoBehaviour
         suspension.angle = 90f;
         joint.suspension = suspension;
 
-        if (addSpinner && wheel.GetComponent<WheelSpinner>() == null)
-            wheel.AddComponent<WheelSpinner>();
+        if (addSpinner)
+        {
+            var spinner = wheel.GetComponent<WheelSpinner>();
+            if (spinner == null)
+                spinner = wheel.AddComponent<WheelSpinner>();
+            spinner.SetRotationSpeed(preservedRotationSpeed);
+        }
     }
 }

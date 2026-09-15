@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: 4cab4aa8ce3e6774aa0d904ec70df88e
+ShaderImporter:
+  externalObjects: {}
+  defaultTextures: []
+  nonModifiableTextures: []
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 156513
+  packageName: All In 1 Sprite Shader
+  packageVersion: 4.68
+  assetPath: Assets/Plugins/AllIn1SpriteShader/Shaders/AllIn1SpriteShaderLitTransparent.shader
+  uploadId: 919916
