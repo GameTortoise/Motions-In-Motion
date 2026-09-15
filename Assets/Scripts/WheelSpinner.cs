@@ -9,6 +9,13 @@ public class WheelSpinner : MonoBehaviour
 
     private Rigidbody2D wheelBody;
 
+    public float RotationSpeed => rotationSpeed;
+
+    public void SetRotationSpeed(float speed)
+    {
+        rotationSpeed = speed;
+    }
+
     private void Awake()
     {
         wheelBody = GetComponent<Rigidbody2D>();
