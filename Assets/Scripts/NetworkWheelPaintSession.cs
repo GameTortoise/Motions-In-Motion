@@ -26,7 +26,6 @@ public sealed class NetworkWheelPaintSession : MonoBehaviour
 {
     [Header("Team")]
     [SerializeField] private bool defendant = true;
-    [SerializeField] private bool showEditorForHostWhenAlone = true;
 
     [Header("Scene references")]
     [SerializeField] private PaintEditorCanvas paintEditorPrefab;
@@ -51,6 +50,7 @@ public sealed class NetworkWheelPaintSession : MonoBehaviour
     private bool playerEventsSubscribed;
     private bool instantiatedLocalEditor;
     private Transform localEditorOriginalParent;
+    private GameObject editorBackgroundCamera;
 
     private IEnumerator Start()
     {
@@ -81,15 +81,21 @@ public sealed class NetworkWheelPaintSession : MonoBehaviour
 
         if (asServer && !serverSubscribed)
         {
-            serverSubscribed = true;
+            defendantRevision = 0;
+            otherRevision = 0;
+            latestDefendantDrawing = null;
+            latestOtherDrawing = null;
             manager.Subscribe<WheelDrawingUpload>(OnDrawingUploaded, true);
             manager.onPlayerLoadedScene += OnPlayerLoadedScene;
+            serverSubscribed = true;
         }
 
         if (!asServer && !clientSubscribed)
         {
-            clientSubscribed = true;
+            appliedDefendantRevision = 0;
+            appliedOtherRevision = 0;
             manager.Subscribe<WheelDrawingState>(OnDrawingStateReceived, false);
+            clientSubscribed = true;
             AddPlayerEventSubscriptions();
             ConfigureLocalPresentation();
         }
@@ -112,8 +118,10 @@ public sealed class NetworkWheelPaintSession : MonoBehaviour
         if (manager == null || !manager.isClient)
             return;
 
-        var isLobbyHost = manager.isHost;
-        var showEditor = !isLobbyHost || (showEditorForHostWhenAlone && manager.playerCount <= 1);
+        // Planned-host is available before both sides finish connecting, preventing
+        // a one-frame editor/main-screen role swap during lobby startup.
+        var isLobbyHost = manager.isHost || manager.isPlannedHost;
+        var showEditor = !isLobbyHost;
         SetRegularPresentationVisible(!showEditor);
 
         if (!showEditor)
@@ -152,6 +160,7 @@ public sealed class NetworkWheelPaintSession : MonoBehaviour
         localEditor.DrawingSubmitted += SubmitLocalDrawing;
         localEditor.SetToggleButtonVisible(false);
         localEditor.SetPermanentOpen(true);
+        EnsureEditorBackgroundCamera();
     }
 
     private bool SubmitLocalDrawing(byte[] pngData)
@@ -216,15 +225,18 @@ public sealed class NetworkWheelPaintSession : MonoBehaviour
             pngData = upload.pngData
         };
 
-        if (!ApplyDrawing(state))
-            return;
-
         if (state.defendant)
             latestDefendantDrawing = state;
         else
             latestOtherDrawing = state;
 
         manager.SendToAll(state, Channel.ReliableOrdered);
+
+        // A host runs both server and client in one process. Apply explicitly here so
+        // its rendered cars update even if the transport does not loop broadcasts
+        // back through the local client connection.
+        if ((manager.isHost || manager.isPlannedHost) && !ApplyDrawing(state))
+            Debug.LogError("The host received a wheel drawing but could not install it on the target car.", this);
     }
 
     private void OnDrawingStateReceived(PlayerID sender, WheelDrawingState state, bool asServer)
@@ -232,7 +244,8 @@ public sealed class NetworkWheelPaintSession : MonoBehaviour
         if (asServer || state == null || !IsValidDrawing(state.pngData))
             return;
 
-        ApplyDrawing(state);
+        if (!ApplyDrawing(state))
+            Debug.LogError("A network wheel drawing could not be installed on the target car.", this);
     }
 
     private bool ApplyDrawing(WheelDrawingState state)
@@ -320,6 +333,25 @@ public sealed class NetworkWheelPaintSession : MonoBehaviour
         localEditor = null;
         localEditorOriginalParent = null;
         instantiatedLocalEditor = false;
+
+        if (editorBackgroundCamera != null)
+        {
+            Destroy(editorBackgroundCamera);
+            editorBackgroundCamera = null;
+        }
+    }
+
+    private void EnsureEditorBackgroundCamera()
+    {
+        if (editorBackgroundCamera != null)
+            return;
+
+        editorBackgroundCamera = new GameObject("Paint Editor Background Camera");
+        var backgroundCamera = editorBackgroundCamera.AddComponent<Camera>();
+        backgroundCamera.clearFlags = CameraClearFlags.SolidColor;
+        backgroundCamera.backgroundColor = new Color32(24, 27, 34, 255);
+        backgroundCamera.cullingMask = 0;
+        backgroundCamera.depth = -100f;
     }
 
     private void SetRegularPresentationVisible(bool visible)

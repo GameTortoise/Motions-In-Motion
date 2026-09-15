@@ -5523,7 +5523,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::NetworkWheelPaintSession
   defendant: 1
-  showEditorForHostWhenAlone: 1
   paintEditorPrefab: {fileID: 121000000000006, guid: 201ea92e03ac4494bb5424c3e284c6fb, type: 3}
   leftCar: {fileID: 314779091}
   rightCar: {fileID: 2130553441}
