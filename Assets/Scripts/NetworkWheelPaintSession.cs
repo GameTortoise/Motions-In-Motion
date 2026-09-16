@@ -1,6 +1,4 @@
-using System.Collections;
-using System.Collections.Generic;
-using PurrNet;
+using System;
 using UnityEngine;
 
 [DefaultExecutionOrder(-1000)]
@@ -17,116 +15,59 @@ public sealed class NetworkWheelPaintSession : MonoBehaviour
     [SerializeField, Min(1024)] private int maximumDrawingBytes = 2 * 1024 * 1024;
     [SerializeField, Min(128)] private int maximumDrawingDimension = 2048;
 
-    private readonly Dictionary<PlayerID, uint> lastAcceptedSubmission = new();
-    private NetworkManager manager;
-    private Networking networking;
+    public static NetworkWheelPaintSession instance { get; private set; }
+
     private PaintEditorCanvas localEditor;
-    private uint nextSubmissionId;
-    private uint pendingSubmissionId;
-    private byte[] pendingDrawing;
-    private float nextSubmissionRetryTime;
-    private bool pendingFailureLogged;
-    private bool presentationConfigured;
-    private bool editorPresentationVisible;
+    private Func<byte[], bool> localSubmitHandler;
     private bool instantiatedLocalEditor;
     private Transform localEditorOriginalParent;
     private GameObject editorBackgroundCamera;
 
-    private IEnumerator Start()
+    private void Awake()
     {
-        while (NetworkManager.main == null || Networking.instance == null)
-            yield return null;
+        if (instance != null && instance != this)
+        {
+            Debug.LogError("More than one NetworkWheelPaintSession exists in MainGame.", this);
+            enabled = false;
+            return;
+        }
 
-        manager = NetworkManager.main;
-        networking = Networking.instance;
-        networking.drawingReceivedOnHost += OnDrawingReceivedOnHost;
-        networking.drawingReceiptReceived += OnDrawingReceiptReceived;
-        networking.localPlayerTypeChanged += OnLocalPlayerTypeChanged;
-        manager.RegisterEvents(OnNetworkStarted, OnNetworkStopped);
+        instance = this;
+
+        // Keep the normal scene fully visible until an owned network player has
+        // actually received its role. This avoids an empty Game view while joining.
+        SetRegularPresentationVisible(true);
     }
 
     private void OnDestroy()
     {
-        if (localEditor != null)
-            localEditor.DrawingSubmitted -= SubmitLocalDrawing;
+        if (localEditor != null && localSubmitHandler != null)
+            localEditor.DrawingSubmitted -= localSubmitHandler;
 
-        if (networking != null)
+        if (editorBackgroundCamera != null)
+            Destroy(editorBackgroundCamera);
+
+        if (instance == this)
+            instance = null;
+    }
+
+    public bool ConfigureLocalPlayer(PlayerType playerType, Func<byte[], bool> submitHandler)
+    {
+        if (playerType == PlayerType.Host)
         {
-            networking.drawingReceivedOnHost -= OnDrawingReceivedOnHost;
-            networking.drawingReceiptReceived -= OnDrawingReceiptReceived;
-            networking.localPlayerTypeChanged -= OnLocalPlayerTypeChanged;
-        }
-
-        if (manager != null)
-            manager.UnregisterEvents(OnNetworkStarted, OnNetworkStopped);
-    }
-
-    private void OnNetworkStarted(NetworkManager activeManager, bool asServer)
-    {
-        manager = activeManager;
-        if (asServer)
-        {
-            lastAcceptedSubmission.Clear();
-            return;
-        }
-
-        ConfigureLocalPresentation();
-    }
-
-    private void OnNetworkStopped(NetworkManager stoppedManager, bool asServer)
-    {
-        if (asServer)
-            lastAcceptedSubmission.Clear();
-        else
-        {
-            pendingDrawing = null;
-            RestoreRegularPresentation();
-        }
-    }
-
-    private void OnLocalPlayerTypeChanged(PlayerType playerType)
-    {
-        if (manager != null && manager.isClient)
-            ConfigureLocalPresentation();
-    }
-
-    private void LateUpdate()
-    {
-        if (manager == null || !manager.isClient)
-            return;
-
-        bool shouldShowEditor = !manager.isServer && networking != null &&
-                                networking.hasLocalPlayerType &&
-                                Networking.IsDrawingRole(networking.localPlayerType);
-        if (!presentationConfigured || editorPresentationVisible != shouldShowEditor)
-            ConfigureLocalPresentation();
-
-        if (pendingDrawing != null && !manager.isServer && Time.unscaledTime >= nextSubmissionRetryTime)
-            SendPendingDrawing();
-    }
-
-    private void ConfigureLocalPresentation()
-    {
-        if (manager == null || !manager.isClient)
-            return;
-
-        // The server-assigned role is authoritative. A client cannot choose its
-        // own team or the car that receives its wheel drawing.
-        bool showEditor = !manager.isServer && networking != null &&
-                          networking.hasLocalPlayerType &&
-                          Networking.IsDrawingRole(networking.localPlayerType);
-        bool showRegularPresentation = manager.isServer ||
-                                       (networking != null && networking.hasLocalPlayerType &&
-                                        networking.localPlayerType == PlayerType.Host);
-        presentationConfigured = true;
-        editorPresentationVisible = showEditor;
-        SetRegularPresentationVisible(showRegularPresentation);
-
-        if (!showEditor)
-        {
+            SetRegularPresentationVisible(true);
             HideLocalEditor();
-            return;
+            return true;
         }
+
+        if (playerType != PlayerType.Prosecutor && playerType != PlayerType.Defendant)
+        {
+            Debug.LogWarning($"No local presentation is configured yet for {playerType}.", this);
+            return false;
+        }
+
+        if (submitHandler == null)
+            return false;
 
         localEditor = FindAnyObjectByType<PaintEditorCanvas>(FindObjectsInactive.Include);
         if (localEditor == null && paintEditorPrefab != null)
@@ -137,8 +78,8 @@ public sealed class NetworkWheelPaintSession : MonoBehaviour
 
         if (localEditor == null)
         {
-            Debug.LogError("Network wheel painting needs a PaintEditorCanvas in the scene or a prefab reference.", this);
-            return;
+            Debug.LogError("MainGame needs a PaintEditorCanvas instance or prefab reference.", this);
+            return false;
         }
 
         if (localEditorOriginalParent == null && localEditor.transform.parent != null)
@@ -152,108 +93,42 @@ public sealed class NetworkWheelPaintSession : MonoBehaviour
         editorRect.anchoredPosition = Vector2.zero;
         editorRect.sizeDelta = Vector2.zero;
         editorRect.pivot = new Vector2(0.5f, 0.5f);
-        localEditor.transform.localScale = Vector3.one;
-        localEditor.name = $"{networking.localPlayerType} Wheel Paint Editor";
-        localEditor.DrawingSubmitted -= SubmitLocalDrawing;
-        localEditor.DrawingSubmitted += SubmitLocalDrawing;
+        editorRect.localScale = Vector3.one;
+
+        if (localSubmitHandler != null)
+            localEditor.DrawingSubmitted -= localSubmitHandler;
+        localSubmitHandler = submitHandler;
+        localEditor.DrawingSubmitted -= localSubmitHandler;
+        localEditor.DrawingSubmitted += localSubmitHandler;
+
+        localEditor.name = $"{playerType} Wheel Paint Editor";
         localEditor.SetToggleButtonVisible(false);
         localEditor.SetPermanentOpen(true);
+
+        // Create a real camera before disabling the host presentation. Unity's Game
+        // view therefore always has an active camera behind the overlay canvas.
         EnsureEditorBackgroundCamera();
-    }
-
-    private bool SubmitLocalDrawing(byte[] pngData)
-    {
-        if (manager == null || !manager.isClient || manager.isServer || networking == null ||
-            !networking.hasLocalPlayerType || !Networking.IsDrawingRole(networking.localPlayerType) ||
-            !IsValidDrawing(pngData))
-            return false;
-
-        uint submissionId = ++nextSubmissionId;
-        if (submissionId == 0)
-            submissionId = ++nextSubmissionId;
-
-        pendingSubmissionId = submissionId;
-        pendingDrawing = pngData;
-        pendingFailureLogged = false;
-        SendPendingDrawing();
-
+        SetRegularPresentationVisible(false);
         return true;
     }
 
-    private void SendPendingDrawing()
+    public void ReleaseLocalPlayer(Func<byte[], bool> submitHandler)
     {
-        if (manager == null || !manager.isClient || manager.isServer || pendingDrawing == null)
-            return;
-
-        if (networking != null && networking.SendDrawingToHost(pendingSubmissionId, pendingDrawing))
-            nextSubmissionRetryTime = Time.unscaledTime + 2f;
-        else
-            nextSubmissionRetryTime = Time.unscaledTime + 0.5f;
+        if (localEditor != null && submitHandler != null)
+            localEditor.DrawingSubmitted -= submitHandler;
+        if (localSubmitHandler == submitHandler)
+            localSubmitHandler = null;
     }
 
-    private void OnDrawingReceivedOnHost(PlayerID sender, WheelDrawingUpload upload)
+    public bool InstallNetworkDrawing(PlayerType playerType, byte[] pngData)
     {
-        if (manager == null || !manager.isServer || upload == null)
-            return;
+        if ((playerType != PlayerType.Prosecutor && playerType != PlayerType.Defendant) ||
+            !IsValidDrawing(pngData))
+            return false;
 
-        if (lastAcceptedSubmission.TryGetValue(sender, out uint acceptedId) && upload.submissionId <= acceptedId)
-        {
-            networking.SendDrawingReceipt(sender, upload.submissionId, true);
-            return;
-        }
-
-        if (!IsValidDrawing(upload.pngData))
-        {
-            networking.SendDrawingReceipt(sender, upload.submissionId, false);
-            return;
-        }
-
-        if (!Networking.IsDrawingRole(upload.playerType) ||
-            !networking.TryGetPlayerType(sender, out PlayerType authoritativeType) ||
-            authoritativeType != upload.playerType)
-        {
-            networking.SendDrawingReceipt(sender, upload.submissionId, false);
-            return;
-        }
-
-        // Defendants draw the left car; prosecutors draw the right car.
-        var targetCar = authoritativeType == PlayerType.Defendant ? leftCar : rightCar;
-        bool installed = targetCar != null &&
-                         targetCar.InstallPngAsWheels(upload.pngData, maximumDrawingDimension);
-
-        if (installed)
-        {
-            lastAcceptedSubmission[sender] = upload.submissionId;
-            Debug.Log($"Installed {authoritativeType} wheel drawing {upload.submissionId} from player {sender} on the host car.", this);
-        }
-        else
-        {
-            Debug.LogError("The host received a complete wheel drawing but could not install it on the target car.", this);
-        }
-
-        networking.SendDrawingReceipt(sender, upload.submissionId, installed);
-    }
-
-    private void OnDrawingReceiptReceived(WheelDrawingReceipt receipt)
-    {
-        if (receipt == null || receipt.submissionId != pendingSubmissionId)
-            return;
-
-        if (receipt.accepted)
-        {
-            pendingDrawing = null;
-            pendingFailureLogged = false;
-            return;
-        }
-
-        // A valid drawing can arrive before every host scene object has completed
-        // initialization. Keep it pending and retry instead of losing the submission.
-        if (!pendingFailureLogged)
-        {
-            Debug.LogWarning("The host received the wheel drawing but was not ready to install it; retrying.", this);
-            pendingFailureLogged = true;
-        }
-        nextSubmissionRetryTime = Time.unscaledTime + 2f;
+        // Defendants contribute to the left car; prosecutors to the right car.
+        var targetCar = playerType == PlayerType.Defendant ? leftCar : rightCar;
+        return targetCar != null && targetCar.InstallPngAsWheels(pngData, maximumDrawingDimension);
     }
 
     private bool IsValidDrawing(byte[] pngData)
@@ -265,35 +140,29 @@ public sealed class NetworkWheelPaintSession : MonoBehaviour
                width <= maximumDrawingDimension && height <= maximumDrawingDimension;
     }
 
-    private void RestoreRegularPresentation()
-    {
-        presentationConfigured = false;
-        editorPresentationVisible = false;
-        SetRegularPresentationVisible(true);
-        HideLocalEditor();
-    }
-
     private void HideLocalEditor()
     {
         if (localEditor == null)
             localEditor = FindAnyObjectByType<PaintEditorCanvas>(FindObjectsInactive.Include);
 
-        if (localEditor == null)
-            return;
+        if (localEditor != null)
+        {
+            if (localSubmitHandler != null)
+                localEditor.DrawingSubmitted -= localSubmitHandler;
+            localSubmitHandler = null;
+            localEditor.SetPermanentOpen(false);
+            localEditor.SetToggleButtonVisible(false);
+            localEditor.SetOpen(false);
 
-        localEditor.DrawingSubmitted -= SubmitLocalDrawing;
-        localEditor.SetPermanentOpen(false);
-        localEditor.SetToggleButtonVisible(false);
-        localEditor.SetOpen(false);
+            if (instantiatedLocalEditor)
+                Destroy(localEditor.gameObject);
+            else if (localEditorOriginalParent != null)
+                localEditor.transform.SetParent(localEditorOriginalParent, false);
 
-        if (instantiatedLocalEditor)
-            Destroy(localEditor.gameObject);
-        else if (localEditorOriginalParent != null)
-            localEditor.transform.SetParent(localEditorOriginalParent, false);
-
-        localEditor = null;
-        localEditorOriginalParent = null;
-        instantiatedLocalEditor = false;
+            localEditor = null;
+            localEditorOriginalParent = null;
+            instantiatedLocalEditor = false;
+        }
 
         if (editorBackgroundCamera != null)
         {

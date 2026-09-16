@@ -66,9 +66,6 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 3820098720286823964, guid: 4550829d8e61e6042bd77dac5d1429ae, type: 3}
       insertIndex: 2
       addedObject: {fileID: 1454789416626031383}
-    - targetCorrespondingSourceObject: {fileID: 3820098720286823964, guid: 4550829d8e61e6042bd77dac5d1429ae, type: 3}
-      insertIndex: 3
-      addedObject: {fileID: 777000000000000001}
   m_SourcePrefab: {fileID: 100100000, guid: 4550829d8e61e6042bd77dac5d1429ae, type: 3}
 --- !u!1 &8731691447768879912 stripped
 GameObject:
@@ -127,15 +124,3 @@ MonoBehaviour:
     maxLatency: 100
     simulatePacketLoss: 0
     packetLossChance: 10
---- !u!114 &777000000000000001
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8731691447768879912}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: eebe6788196487a47bff27a2ea71eb78, type: 3}
-  m_Name:
-  m_EditorClassIdentifier: Assembly-CSharp::Networking
