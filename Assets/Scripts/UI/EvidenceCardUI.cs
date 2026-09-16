@@ -19,15 +19,6 @@ public class EvidenceCardUI : MonoBehaviour
 
     private bool isSelected = false;
 
-    public void SetInteractable(bool interactable)
-    {
-        Button button = GetComponent<Button>();
-        if (button != null)
-        {
-            button.interactable = interactable;
-        }
-    }
-
     public void Setup(
         EvidenceData data,
         int evidenceNumber,

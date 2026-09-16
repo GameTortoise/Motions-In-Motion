@@ -29,29 +29,14 @@ public class EvidenceSelectionUI : MonoBehaviour
     public List<EvidenceData> selectedEvidence =
         new List<EvidenceData>();
 
-    private readonly List<EvidenceData> displayedEvidence =
-        new List<EvidenceData>();
-
-    private bool boardInitialized;
-
     private void Start()
     {
-        InitializeHostBoard();
+        DisplayEvidence();
         UpdateSelectionCount();
     }
 
-    public void InitializeHostBoard()
+    private void DisplayEvidence()
     {
-        if (boardInitialized)
-        {
-            return;
-        }
-
-        if (GameSession.Instance != null && GameSession.Instance.selectedCase != null)
-        {
-            caseData = GameSession.Instance.selectedCase;
-        }
-
         if (caseData == null)
         {
             Debug.LogError("CaseData has not been assigned.");
@@ -70,92 +55,56 @@ public class EvidenceSelectionUI : MonoBehaviour
             return;
         }
 
-        boardInitialized = true;
-        displayedEvidence.Clear();
-
-        if (caseData.evidence != null)
-        {
-            displayedEvidence.AddRange(caseData.evidence);
-        }
-
-        if (selectionCountText != null)
-        {
-            selectionCountText.gameObject.SetActive(false);
-        }
-
-        ConfigureEvidenceGrid(displayedEvidence.Count);
+        ConfigureEvidenceGrid(caseData.evidence.Count);
 
         List<int> randomizedNoteStyles = BuildRandomizedNoteStyles(
-            displayedEvidence.Count,
+            caseData.evidence.Count,
             stickyNoteSprites != null && stickyNoteSprites.Length > 0
                 ? stickyNoteSprites.Length
                 : 4
         );
 
-        for (int i = 0; i < displayedEvidence.Count; i++)
+        for (int i = 0; i < caseData.evidence.Count; i++)
         {
-            CreateEvidenceCard(displayedEvidence[i], i, randomizedNoteStyles[i]);
+            EvidenceData evidence = caseData.evidence[i];
+
+            GameObject newCard = Instantiate(
+                evidenceCardPrefab,
+                evidenceContainer
+            );
+
+            EvidenceCardUI cardUI =
+                newCard.GetComponent<EvidenceCardUI>();
+
+            if (cardUI == null)
+            {
+                Debug.LogError(
+                    "EvidenceCard prefab is missing EvidenceCardUI."
+                );
+
+                continue;
+            }
+
+            int noteStyleIndex = randomizedNoteStyles[i];
+            Sprite stickyNoteSprite = null;
+            if (stickyNoteSprites != null && stickyNoteSprites.Length > 0)
+            {
+                stickyNoteSprite = stickyNoteSprites[noteStyleIndex % stickyNoteSprites.Length];
+            }
+
+            float minimumScale = Mathf.Min(stickyNoteScaleRange.x, stickyNoteScaleRange.y);
+            float maximumScale = Mathf.Max(stickyNoteScaleRange.x, stickyNoteScaleRange.y);
+            float uniformScale = Random.Range(minimumScale, maximumScale);
+
+            cardUI.Setup(
+                evidence,
+                i + 1,
+                this,
+                stickyNoteSprite,
+                uniformScale,
+                noteStyleIndex
+            );
         }
-    }
-
-    public bool AddGeneratedEvidence(string evidenceName, Sprite drawing)
-    {
-        InitializeHostBoard();
-
-        if (!boardInitialized || displayedEvidence.Count >= 10 || drawing == null)
-        {
-            return false;
-        }
-
-        EvidenceData generatedEvidence = new EvidenceData
-        {
-            evidenceName = evidenceName,
-            description = "Submitted by a player",
-            image = drawing
-        };
-
-        displayedEvidence.Add(generatedEvidence);
-        ConfigureEvidenceGrid(displayedEvidence.Count);
-
-        int styleCount = stickyNoteSprites != null && stickyNoteSprites.Length > 0
-            ? stickyNoteSprites.Length
-            : 4;
-        int index = displayedEvidence.Count - 1;
-        CreateEvidenceCard(generatedEvidence, index, index % Mathf.Max(1, styleCount));
-        return true;
-    }
-
-    private void CreateEvidenceCard(EvidenceData evidence, int index, int noteStyleIndex)
-    {
-        GameObject newCard = Instantiate(evidenceCardPrefab, evidenceContainer);
-        EvidenceCardUI cardUI = newCard.GetComponent<EvidenceCardUI>();
-
-        if (cardUI == null)
-        {
-            Debug.LogError("EvidenceCard prefab is missing EvidenceCardUI.");
-            Destroy(newCard);
-            return;
-        }
-
-        Sprite stickyNoteSprite = null;
-        if (stickyNoteSprites != null && stickyNoteSprites.Length > 0)
-        {
-            stickyNoteSprite = stickyNoteSprites[noteStyleIndex % stickyNoteSprites.Length];
-        }
-
-        float minimumScale = Mathf.Min(stickyNoteScaleRange.x, stickyNoteScaleRange.y);
-        float maximumScale = Mathf.Max(stickyNoteScaleRange.x, stickyNoteScaleRange.y);
-        float uniformScale = Random.Range(minimumScale, maximumScale);
-
-        cardUI.Setup(
-            evidence,
-            index + 1,
-            this,
-            stickyNoteSprite,
-            uniformScale,
-            noteStyleIndex
-        );
-        cardUI.SetInteractable(false);
     }
 
     private List<int> BuildRandomizedNoteStyles(int itemCount, int styleCount)

@@ -5483,7 +5483,6 @@ GameObject:
   m_Component:
   - component: {fileID: 9700000002}
   - component: {fileID: 9700000003}
-  - component: {fileID: 9700000004}
   m_Layer: 0
   m_Name: Network Wheel Paint Session
   m_TagString: Untagged
@@ -5528,18 +5527,6 @@ MonoBehaviour:
   - {fileID: 9304001}
   maximumDrawingBytes: 2097152
   maximumDrawingDimension: 2048
---- !u!114 &9700000004
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 9700000001}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 30d97bb2f9a68434f8279577c67bfe9c, type: 3}
-  m_Name:
-  m_EditorClassIdentifier: Assembly-CSharp::EvidenceSceneLoader
 --- !u!1001 &6381394025400310523
 PrefabInstance:
   m_ObjectHideFlags: 0

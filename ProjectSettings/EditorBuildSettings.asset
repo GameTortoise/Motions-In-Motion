@@ -11,8 +11,5 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/MainGame.unity
     guid: acf62c2381c9245478af69d968261ac5
-  - enabled: 1
-    path: Assets/Scenes/evidenceSelection.unity
-    guid: 0171f5f0ae130d14e90b2f35de3d6796
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
