@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using UnityEngine.UI;
 
 [DefaultExecutionOrder(-1000)]
 [DisallowMultipleComponent]
@@ -22,6 +23,7 @@ public sealed class NetworkWheelPaintSession : MonoBehaviour
     private bool instantiatedLocalEditor;
     private Transform localEditorOriginalParent;
     private GameObject editorBackgroundCamera;
+    private GameObject evidenceButtonCanvas;
 
     private void Awake()
     {
@@ -47,6 +49,9 @@ public sealed class NetworkWheelPaintSession : MonoBehaviour
         if (editorBackgroundCamera != null)
             Destroy(editorBackgroundCamera);
 
+        if (evidenceButtonCanvas != null)
+            Destroy(evidenceButtonCanvas);
+
         if (instance == this)
             instance = null;
     }
@@ -57,6 +62,7 @@ public sealed class NetworkWheelPaintSession : MonoBehaviour
         {
             SetRegularPresentationVisible(true);
             HideLocalEditor();
+            EnsureEvidenceSceneButton();
             return true;
         }
 
@@ -108,6 +114,7 @@ public sealed class NetworkWheelPaintSession : MonoBehaviour
         // Create a real camera before disabling the host presentation. Unity's Game
         // view therefore always has an active camera behind the overlay canvas.
         EnsureEditorBackgroundCamera();
+        HideEvidenceSceneButton();
         SetRegularPresentationVisible(false);
         return true;
     }
@@ -182,6 +189,97 @@ public sealed class NetworkWheelPaintSession : MonoBehaviour
         backgroundCamera.backgroundColor = new Color32(24, 27, 34, 255);
         backgroundCamera.cullingMask = 0;
         backgroundCamera.depth = -100f;
+    }
+
+    private void EnsureEvidenceSceneButton()
+    {
+        if (evidenceButtonCanvas != null)
+        {
+            evidenceButtonCanvas.SetActive(true);
+            return;
+        }
+
+        EvidenceSceneLoader loader = GetComponent<EvidenceSceneLoader>();
+        if (loader == null)
+        {
+            Debug.LogError("NetworkWheelPaintSession needs an EvidenceSceneLoader component.", this);
+            return;
+        }
+
+        evidenceButtonCanvas = new GameObject(
+            "Host Evidence Phase Controls",
+            typeof(RectTransform),
+            typeof(Canvas),
+            typeof(CanvasScaler),
+            typeof(GraphicRaycaster)
+        );
+
+        Canvas canvas = evidenceButtonCanvas.GetComponent<Canvas>();
+        canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+        canvas.overrideSorting = true;
+        canvas.sortingOrder = 450;
+
+        CanvasScaler scaler = evidenceButtonCanvas.GetComponent<CanvasScaler>();
+        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+        scaler.referenceResolution = new Vector2(1280f, 720f);
+        scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
+        scaler.matchWidthOrHeight = 0.5f;
+
+        var buttonObject = new GameObject(
+            "Open Evidence Board",
+            typeof(RectTransform),
+            typeof(CanvasRenderer),
+            typeof(Image),
+            typeof(Button)
+        );
+        buttonObject.transform.SetParent(evidenceButtonCanvas.transform, false);
+
+        RectTransform buttonRect = buttonObject.GetComponent<RectTransform>();
+        buttonRect.anchorMin = Vector2.one;
+        buttonRect.anchorMax = Vector2.one;
+        buttonRect.pivot = Vector2.one;
+        buttonRect.anchoredPosition = new Vector2(-24f, -24f);
+        buttonRect.sizeDelta = new Vector2(230f, 58f);
+
+        Image buttonImage = buttonObject.GetComponent<Image>();
+        buttonImage.color = new Color32(46, 125, 88, 245);
+
+        Button button = buttonObject.GetComponent<Button>();
+        button.targetGraphic = buttonImage;
+        button.onClick.AddListener(() =>
+        {
+            button.interactable = false;
+            loader.LoadEvidenceSelection();
+        });
+
+        var labelObject = new GameObject(
+            "Label",
+            typeof(RectTransform),
+            typeof(CanvasRenderer),
+            typeof(Text)
+        );
+        labelObject.transform.SetParent(buttonObject.transform, false);
+
+        Text label = labelObject.GetComponent<Text>();
+        label.text = "Open Evidence Board";
+        label.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        label.fontSize = 20;
+        label.fontStyle = FontStyle.Bold;
+        label.alignment = TextAnchor.MiddleCenter;
+        label.color = Color.white;
+        label.raycastTarget = false;
+
+        RectTransform labelRect = label.rectTransform;
+        labelRect.anchorMin = Vector2.zero;
+        labelRect.anchorMax = Vector2.one;
+        labelRect.offsetMin = new Vector2(8f, 4f);
+        labelRect.offsetMax = new Vector2(-8f, -4f);
+    }
+
+    private void HideEvidenceSceneButton()
+    {
+        if (evidenceButtonCanvas != null)
+            evidenceButtonCanvas.SetActive(false);
     }
 
     private void SetRegularPresentationVisible(bool visible)
