@@ -725,6 +725,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1225323650}
   - component: {fileID: 1225323649}
+  - component: {fileID: 1225323651}
   m_Layer: 0
   m_Name: EvidenceSelectionManager
   m_TagString: Untagged
@@ -756,6 +757,24 @@ MonoBehaviour:
   maxSelections: 3
   selectionCountText: {fileID: 47968241}
   selectedEvidence: []
+--- !u!114 &1225323651
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1225323648}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 79ad0dbd83334c9bb3c1523f0f9b3f18, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::NetworkEvidenceSession
+  hostBoard: {fileID: 1225323649}
+  paintEditorPrefab: {fileID: 121000000000006, guid: 201ea92e03ac4494bb5424c3e284c6fb, type: 3}
+  maximumGeneratedEvidence: 2
+  maximumDrawingBytes: 2097152
+  maximumDrawingDimension: 2048
+  maximumTitleLength: 80
 --- !u!4 &1225323650
 Transform:
   m_ObjectHideFlags: 0
@@ -1060,6 +1079,54 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &2100000001
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2100000002}
+  - component: {fileID: 2100000003}
+  m_Layer: 0
+  m_Name: Evidence Player Spawner
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2100000002
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2100000001}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2100000003
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2100000001}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 80430407b2664ab8a7df4e773762432e, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::EvidencePlayerSpawner
+  _playerPrefab: {fileID: 5154484800931780872, guid: 1f6329ff68c80dd46a8bb8e5db77130d, type: 3}
+  _ignoreNetworkRules: 0
+  spawnPoints:
+  - {fileID: 2100000002}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
@@ -1069,3 +1136,4 @@ SceneRoots:
   - {fileID: 389754673}
   - {fileID: 1225323650}
   - {fileID: 1838602041}
+  - {fileID: 2100000002}

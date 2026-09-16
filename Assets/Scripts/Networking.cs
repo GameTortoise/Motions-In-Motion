@@ -26,6 +26,8 @@ public sealed class Networking : NetworkBehaviour
 
     private bool serverTypeAssigned;
     private bool localPresentationConfigured;
+    private bool hasSubmittedEvidence;
+    private NetworkEvidenceSession localEvidenceSession;
 
     protected override void OnSpawned()
     {
@@ -73,6 +75,18 @@ public sealed class Networking : NetworkBehaviour
         if (localPresentationConfigured || !isSpawned || !isOwner || !HasAssignedType)
             return;
 
+        localEvidenceSession = NetworkEvidenceSession.instance;
+        if (localEvidenceSession == null)
+            localEvidenceSession = FindAnyObjectByType<NetworkEvidenceSession>(FindObjectsInactive.Include);
+
+        if (localEvidenceSession != null)
+        {
+            localPresentationConfigured = localEvidenceSession.ConfigureLocalPlayer(Type, SendEvidenceToHost);
+            if (localPresentationConfigured)
+                Debug.Log($"Local player configured for the evidence phase as {Type}.", this);
+            return;
+        }
+
         var paintSession = NetworkWheelPaintSession.instance;
         if (paintSession == null)
             paintSession = FindAnyObjectByType<NetworkWheelPaintSession>(FindObjectsInactive.Include);
@@ -98,6 +112,51 @@ public sealed class Networking : NetworkBehaviour
         SubmitDrawingServerRpc(drawingPng);
         Debug.Log($"Submitted {drawingPng.Length} bytes of {Type} wheel art to the host.", this);
         return true;
+    }
+
+    private bool SendEvidenceToHost(string evidenceName, byte[] drawingPng)
+    {
+        if (!isSpawned || !isOwner || isServer || !HasAssignedType ||
+            !IsDrawingType(Type) || hasSubmittedEvidence ||
+            string.IsNullOrWhiteSpace(evidenceName) || drawingPng == null ||
+            drawingPng.Length == 0 || drawingPng.Length > MaximumDrawingBytes)
+            return false;
+
+        SubmitEvidenceServerRpc(evidenceName.Trim(), drawingPng);
+        return true;
+    }
+
+    [ServerRpc(channel: Channel.ReliableOrdered, mtuExceeded: MTUBehaviour.Fragment)]
+    private void SubmitEvidenceServerRpc(string evidenceName, byte[] drawingPng)
+    {
+        if (!isServer || hasSubmittedEvidence || !HasAssignedType ||
+            !IsDrawingType(Type) || string.IsNullOrWhiteSpace(evidenceName) ||
+            drawingPng == null || drawingPng.Length == 0 ||
+            drawingPng.Length > MaximumDrawingBytes)
+            return;
+
+        var evidenceSession = NetworkEvidenceSession.instance;
+        if (evidenceSession == null)
+            evidenceSession = FindAnyObjectByType<NetworkEvidenceSession>(FindObjectsInactive.Include);
+
+        bool accepted = evidenceSession != null &&
+                        evidenceSession.InstallSubmittedEvidence(evidenceName.Trim(), drawingPng);
+
+        if (accepted)
+            hasSubmittedEvidence = true;
+
+        if (owner.HasValue)
+            EvidenceResultTargetRpc(owner.Value, accepted);
+    }
+
+    [TargetRpc]
+    private void EvidenceResultTargetRpc(PlayerID target, bool accepted)
+    {
+        if (localEvidenceSession == null)
+            localEvidenceSession = NetworkEvidenceSession.instance;
+
+        if (localEvidenceSession != null)
+            localEvidenceSession.ReportSubmissionResult(accepted);
     }
 
     [ServerRpc(channel: Channel.ReliableOrdered, mtuExceeded: MTUBehaviour.Fragment)]
@@ -138,6 +197,14 @@ public sealed class Networking : NetworkBehaviour
     {
         if (!localPresentationConfigured)
             return;
+
+        if (localEvidenceSession != null)
+        {
+            localEvidenceSession.ReleaseLocalPlayer(SendEvidenceToHost);
+            localEvidenceSession = null;
+            localPresentationConfigured = false;
+            return;
+        }
 
         var paintSession = NetworkWheelPaintSession.instance;
         if (paintSession != null)
