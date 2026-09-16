@@ -86,13 +86,29 @@ public sealed class CourtPresentation : MonoBehaviour
     private void ApplyTheme()
     {
         if (assets == null) return;
+        // PurrUI draws its panels procedurally rather than with Unity Images.
+        // Keep their rounded edges and input behavior while giving plain surfaces paper.
+        foreach (var panel in FindObjectsByType<PurrNet.UI.RectangleGraphic>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+        {
+            bool surface = panel.roundnessRole == PurrNet.UI.RoundnessRole.Panel ||
+                panel.roundnessRole == PurrNet.UI.RoundnessRole.Input ||
+                panel.roundnessRole == PurrNet.UI.RoundnessRole.Item;
+            if (surface && (panel.texture == null || panel.texture == assets.paper.texture))
+            {
+                panel.texture = assets.paper.texture;
+                panel.graphicColor = Color.white;
+                panel.color = Color.white;
+            }
+        }
         foreach (var text in FindObjectsByType<TMP_Text>(FindObjectsInactive.Include, FindObjectsSortMode.None))
         {
             if (text.font != assets.titleFont) text.font = text.fontSize >= 45f ? assets.titleFont : assets.bodyFont;
             for (var parent = text.transform.parent; parent != null; parent = parent.parent)
             {
                 var panel = parent.GetComponent<Image>();
-                if (panel != null && panel.sprite == assets.paper)
+                var procedural = parent.GetComponent<PurrNet.UI.RectangleGraphic>();
+                if ((panel != null && panel.sprite == assets.paper) ||
+                    (procedural != null && procedural.texture == assets.paper.texture))
                 { text.color = new Color32(37,29,24,255); break; }
             }
         }

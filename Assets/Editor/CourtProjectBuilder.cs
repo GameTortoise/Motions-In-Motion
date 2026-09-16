@@ -110,10 +110,15 @@ public static class CourtProjectBuilder
             if (TrialRules.OwnsEvidence(PlayerType.Prosecutor,i) == TrialRules.OwnsEvidence(PlayerType.Defendant,i)) throw new Exception("Evidence partition failed.");
         Debug.Log("COURT VALIDATION PASSED");
     }
+    [MenuItem("Court/Build WebGL Submission")]
     public static void BuildWebGL()
     {
         Validate();
-        var report = BuildPipeline.BuildPlayer(EditorBuildSettings.scenes.Where(s=>s.enabled).Select(s=>s.path).ToArray(), "Builds/CourtWebGL", BuildTarget.WebGL, BuildOptions.Development);
+        PlayerSettings.productName = "Motions in Motions";
+        PlayerSettings.WebGL.compressionFormat = WebGLCompressionFormat.Gzip;
+        PlayerSettings.WebGL.decompressionFallback = true;
+        PlayerSettings.runInBackground = true;
+        var report = BuildPipeline.BuildPlayer(EditorBuildSettings.scenes.Where(s=>s.enabled).Select(s=>s.path).ToArray(), "Builds/CourtWebGL", BuildTarget.WebGL, BuildOptions.None);
         if (report.summary.result != UnityEditor.Build.Reporting.BuildResult.Succeeded) throw new Exception("WebGL build failed: " + report.summary.result);
     }
     public static void BuildSmoke()
@@ -138,7 +143,8 @@ public static class CourtProjectBuilder
         }
         catch (Exception error) { Debug.LogException(error); throw; }
         finally { if (original.Any(s => s.isLoaded && s.isActive)) EditorSceneManager.RestoreSceneManagerSetup(original); }
-    }    public static void BuildFinalSmoke()
+    }
+    public static void BuildFinalSmoke()
     {
         Build();
         BuildSmoke();
