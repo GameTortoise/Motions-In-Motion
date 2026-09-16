@@ -12,5 +12,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 763a0a75464d4e21a386a5ad94ef5db8, type: 3}
   m_Name: GameAllocator.Jam
   m_EditorClassIdentifier: Assembly-CSharp::JamPurrTransportGameAllocator
-  gameScene: MainGame
+  gameScene: CaseSelection
   useP2P: 1

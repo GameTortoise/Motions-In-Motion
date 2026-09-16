@@ -47,7 +47,7 @@ namespace PurrNet.Lobby
         [SerializeField] private TMP_Text _microphoneText;
         [SerializeField] private GameObject _microphoneFeature;
         [Space]
-        [SerializeField, Min(1)] private int _minimumPlayersToStart = 5;
+        [SerializeField, Min(1)] private int _minimumPlayersToStart = 3;
         [SerializeField] private TMP_Text _lobbyStatus;
         [SerializeField] private TMP_Text _lobbyStatusDetails;
         [Space]
@@ -177,7 +177,7 @@ namespace PurrNet.Lobby
             }
 
             // The lobby owner is the TV/display authority and does not count as a player.
-            return participantCount >= _minimumPlayersToStart && allParticipantsReady;
+            return participantCount != 4 && participantCount >= _minimumPlayersToStart && allParticipantsReady;
         }
 
         private void StartGame()
@@ -436,9 +436,13 @@ namespace PurrNet.Lobby
             }
 
             string message;
-            if (participantCount < _minimumPlayersToStart)
+            if (participantCount == 4)
             {
-                message = "Sorry, this game is minimum 5 players. We didn't have time to implement our smaller player amount variants in code.";
+                message = "4 player mode doesn\u2019t work. Sorry\u2026";
+            }
+            else if (participantCount < _minimumPlayersToStart)
+            {
+                message = "This game needs at least 3 players, excluding the display host.";
             }
             else if (!allParticipantsReady)
             {

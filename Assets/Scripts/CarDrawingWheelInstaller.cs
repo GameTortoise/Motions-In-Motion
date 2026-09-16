@@ -24,6 +24,17 @@ public sealed class CarDrawingWheelInstaller : MonoBehaviour
     private float preservedRotationSpeed = -360f;
     private Texture2D installedDrawingTexture;
     private Sprite installedDrawingSprite;
+    [SerializeField] private Vector3[] templateMounts;
+    [SerializeField] private float templateSpeed = -360f;
+
+    public void MakeTemplate()
+    {
+        templateMounts = wheelMounts.ToArray();
+        templateSpeed = preservedRotationSpeed;
+        foreach (var wheel in installedWheels) if (wheel != null) Destroy(wheel);
+        installedWheels.Clear();
+        gameObject.SetActive(false);
+    }
 
     private void Awake()
     {
@@ -58,13 +69,20 @@ public sealed class CarDrawingWheelInstaller : MonoBehaviour
 
         if (wheelMounts.Count == 0)
         {
-            wheelMounts.Add(new Vector3(-0.25f, -0.9f, 0f));
-            wheelMounts.Add(new Vector3(0.25f, -0.9f, 0f));
+            if (templateMounts != null && templateMounts.Length > 0)
+                wheelMounts.AddRange(templateMounts);
+            else
+            {
+                wheelMounts.Add(new Vector3(-0.25f, -0.9f, 0f));
+                wheelMounts.Add(new Vector3(0.25f, -0.9f, 0f));
+            }
+            preservedRotationSpeed = templateSpeed;
         }
     }
 
     private void OnDestroy()
     {
+        foreach (var wheel in installedWheels) if (wheel != null) Destroy(wheel);
         if (activeInstaller == this)
             activeInstaller = null;
 

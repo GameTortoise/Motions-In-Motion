@@ -1,0 +1,40 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ebfde084c3504a0e8602407c01555aca, type: 3}
+  m_Name: CourtAssets
+  m_EditorClassIdentifier: Assembly-CSharp::CourtAssets
+  cases:
+  - {fileID: 11400000, guid: 7efc165dd1a540e4e87045b585daa205, type: 2}
+  - {fileID: 11400000, guid: 55e8263dcb834784dbd17e72f8dcd540, type: 2}
+  paper: {fileID: 2077855871647295974, guid: 7947a5e8015e6fd459db0841859d69ad, type: 3}
+  wood: {fileID: 3954734884487546598, guid: a9fcfadc574a443488f89dca5b5b2819, type: 3}
+  evidenceBackground: {fileID: 3954734884487546598, guid: a9fcfadc574a443488f89dca5b5b2819, type: 3}
+  goobers:
+  - {fileID: 4307497151029818645, guid: 7200af876a228ec4eb37652bc359932b, type: 3}
+  - {fileID: 7603179879260212501, guid: 7878022eb92f5e6498472d5adc471bfe, type: 3}
+  - {fileID: 5911984343243554723, guid: bb529d110faa01249819e1fe582b465b, type: 3}
+  - {fileID: 412184653493448023, guid: 553e86eb63e9a414689c9807efef00ab, type: 3}
+  - {fileID: 5071075726376390673, guid: dbce77b6ac13a0646851d0779fb9d389, type: 3}
+  - {fileID: 2932706591014689101, guid: a94a4541b734f854b9f28e64eabdfea5, type: 3}
+  - {fileID: -8045881823111079298, guid: 631f0d4f1697ad943a15ccce8aa2ef73, type: 3}
+  - {fileID: 1314534406234375771, guid: 5a0cccc2cded65049b8da5f236d8454a, type: 3}
+  bodyFont: {fileID: 11400000, guid: 2a5f30eeef7608443a254e66d8477699, type: 2}
+  titleFont: {fileID: 11400000, guid: 8af067fe4d768be4f8e82a6abe70f9cf, type: 2}
+  legacyFont: {fileID: 12800000, guid: 85c25c42f967ea143a05e9852ccbf704, type: 3}
+  opening: {fileID: 8300000, guid: 86c5713942f467043a72f1ef071d80e3, type: 3}
+  middle: {fileID: 8300000, guid: 30cc6d23762b3a54c9cc4b8a92f84232, type: 3}
+  finale: {fileID: 8300000, guid: 8d3abacd422d3b743b931ba29f821024, type: 3}
+  objection: {fileID: 8300000, guid: 7f8fb2919953e694fa4463249e8c17b4, type: 3}
+  lobby: {fileID: 8300000, guid: 65e2b768092c7f443bd6b31cffca2143, type: 3}
+  evidenceCanvas: {fileID: 228260872744866321, guid: 38e65415576de73438b9ca820f81b58c, type: 3}
+  evidenceCard: {fileID: 626862531384200315, guid: 3ed632a08b340e24593cd554b7c63bd1, type: 3}
+  playerPrefab: {fileID: 5154484800931780872, guid: 1f6329ff68c80dd46a8bb8e5db77130d, type: 3}

@@ -4,251 +4,90 @@ using PurrNet.Modules;
 using PurrNet.Transports;
 using UnityEngine;
 
-public enum PlayerType : byte
-{
-    Host = 0,
-    Prosecutor = 1,
-    Defendant = 2,
-    Judge = 3
-}
+public enum PlayerType : byte { Host, Prosecutor, Defendant, Judge }
 
-/// <summary>
-/// One instance is spawned and owned for every connected player. The server assigns
-/// its Type once, then the owning client uses this same network object to submit its
-/// wheel PNG directly to the server.
-/// </summary>
 [DisallowMultipleComponent]
 public sealed class Networking : NetworkBehaviour
 {
-    private const int MaximumDrawingBytes = 2 * 1024 * 1024;
-
-    public PlayerType Type { get; private set; } = PlayerType.Host;
+    public PlayerType Type { get; private set; }
     public bool HasAssignedType { get; private set; }
+    private bool configured;
+    private float nextSnapshot;
 
-    private PlayerID? serverAssignedOwner;
-    private Coroutine serverAssignmentRoutine;
-    private bool localPresentationConfigured;
-    private bool hasSubmittedEvidence;
-    private NetworkEvidenceSession localEvidenceSession;
-
-    protected override void OnSpawned()
+    protected override void OnSpawned() { if (isServer) StartCoroutine(Assign()); }
+    private IEnumerator Assign()
     {
-        QueueServerTypeAssignment();
-        ConfigureOwnedPlayer();
-    }
-
-    protected override void OnOwnerChanged(PlayerID? oldOwner, PlayerID? newOwner, bool asServer)
-    {
-        if (asServer)
-            QueueServerTypeAssignment();
-
-        ConfigureOwnedPlayer();
-    }
-
-    private void QueueServerTypeAssignment()
-    {
-        if (!isServer)
-            return;
-
-        if (serverAssignmentRoutine != null)
-            StopCoroutine(serverAssignmentRoutine);
-
-        serverAssignmentRoutine = StartCoroutine(AssignTypeAfterOwnershipSettles());
-    }
-
-    private IEnumerator AssignTypeAfterOwnershipSettles()
-    {
-        // PlayerSpawner spawns first and calls GiveOwnership immediately afterward.
-        // Waiting one frame prevents that temporary spawn owner from becoming Host.
         yield return null;
-
-        while (isSpawned && isServer && networkManager.isHost && !networkManager.isLocalPlayerReady)
-            yield return null;
-
-        serverAssignmentRoutine = null;
-
-        if (!isSpawned || !isServer || !owner.HasValue)
-            yield break;
-
-        var settledOwner = owner.Value;
-        if (serverAssignedOwner.HasValue && serverAssignedOwner.Value == settledOwner)
-            yield break;
-
-        var assignedType = networkManager.isHost && settledOwner == networkManager.localPlayer
-            ? PlayerType.Host
-            : RandomDrawingType();
-
-        serverAssignedOwner = settledOwner;
-        AssignTypeRpc(assignedType);
-        Debug.Log($"Assigned settled player {settledOwner} the role {assignedType}.", this);
+        while (isSpawned && (!owner.HasValue || !networkManager.isLocalPlayerReady)) yield return null;
+        if (!isSpawned) yield break;
+        var role = owner.Value == networkManager.localPlayer ? PlayerType.Host
+            : GameSession.Instance.AssignRole(owner.Value.ToString());
+        AssignTypeRpc(role);
     }
-
-    private static PlayerType RandomDrawingType()
-    {
-        return Random.value < 0.5f ? PlayerType.Prosecutor : PlayerType.Defendant;
-    }
-
     [ObserversRpc(runLocally: true, bufferLast: true)]
-    private void AssignTypeRpc(PlayerType assignedType)
+    private void AssignTypeRpc(PlayerType role) { Type = role; HasAssignedType = true; }
+
+    private void Update()
     {
-        if (HasAssignedType && Type != assignedType)
-            ReleaseLocalPresentation();
-
-        Type = assignedType;
-        HasAssignedType = true;
-        ConfigureOwnedPlayer();
-    }
-
-    private void ConfigureOwnedPlayer()
-    {
-        if (localPresentationConfigured || !isSpawned || !isOwner || !HasAssignedType)
-            return;
-
-        localEvidenceSession = NetworkEvidenceSession.instance;
-        if (localEvidenceSession == null)
-            localEvidenceSession = FindAnyObjectByType<NetworkEvidenceSession>(FindObjectsInactive.Include);
-
-        if (localEvidenceSession != null)
+        if (!isSpawned || !HasAssignedType) return;
+        var trial = CourtTrial.Instance;
+        if (isOwner && !configured && trial != null && trial.State.started) configured = trial.Configure(this);
+        if (isServer && Type == PlayerType.Host && trial != null && Time.unscaledTime >= nextSnapshot)
         {
-            localPresentationConfigured = localEvidenceSession.ConfigureLocalPlayer(Type, SendEvidenceToHost);
-            if (localPresentationConfigured)
-                Debug.Log($"Local player configured for the evidence phase as {Type}.", this);
-            return;
+            nextSnapshot = Time.unscaledTime + 0.2f;
+            StateRpc(trial.Snapshot());
         }
-
-        var paintSession = NetworkWheelPaintSession.instance;
-        if (paintSession == null)
-            paintSession = FindAnyObjectByType<NetworkWheelPaintSession>(FindObjectsInactive.Include);
-
-        if (paintSession == null)
-        {
-            Debug.LogError("The owned player could not find NetworkWheelPaintSession in MainGame.", this);
-            return;
-        }
-
-        localPresentationConfigured = paintSession.ConfigureLocalPlayer(Type, SendDrawingToHost);
-        if (localPresentationConfigured)
-            Debug.Log($"Local player configured as {Type}.", this);
     }
-
-    private bool SendDrawingToHost(byte[] drawingPng)
+    [ObserversRpc(runLocally: true, bufferLast: true)]
+    private void StateRpc(TrialSnapshot snapshot)
     {
-        if (!isSpawned || !isOwner || isServer || !HasAssignedType ||
-            !IsDrawingType(Type) || drawingPng == null || drawingPng.Length == 0 ||
-            drawingPng.Length > MaximumDrawingBytes)
-            return false;
-
-        SubmitDrawingServerRpc(drawingPng);
-        Debug.Log($"Submitted {drawingPng.Length} bytes of {Type} wheel art to the host.", this);
+        if (CourtTrial.Instance != null) CourtTrial.Instance.Receive(snapshot);
+    }
+    public void RequestMotion(int evidence)
+    {
+        if (isOwner && HasAssignedType) MotionRpc(evidence);
+    }
+    [ServerRpc]
+    private void MotionRpc(int evidence)
+    {
+        if (!isServer || !HasAssignedType || CourtTrial.Instance == null || !owner.HasValue) return;
+        bool accepted = CourtTrial.Instance.Reserve(this, evidence);
+        MotionResultRpc(owner.Value, accepted);
+    }
+    [TargetRpc]
+    private void MotionResultRpc(PlayerID target, bool accepted)
+    {
+        if (CourtTrial.Instance != null) CourtTrial.Instance.MotionResult(accepted);
+    }
+    public bool SendDrawing(byte[] png)
+    {
+        if (!isOwner || png == null || png.Length == 0 || png.Length > 2 * 1024 * 1024) return false;
+        DrawingRpc(png);
         return true;
     }
-
-    private bool SendEvidenceToHost(string evidenceName, byte[] drawingPng)
-    {
-        if (!isSpawned || !isOwner || isServer || !HasAssignedType ||
-            !IsDrawingType(Type) || hasSubmittedEvidence ||
-            string.IsNullOrWhiteSpace(evidenceName) || drawingPng == null ||
-            drawingPng.Length == 0 || drawingPng.Length > MaximumDrawingBytes)
-            return false;
-
-        SubmitEvidenceServerRpc(evidenceName.Trim(), drawingPng);
-        return true;
-    }
-
     [ServerRpc(channel: Channel.ReliableOrdered, mtuExceeded: MTUBehaviour.Fragment)]
-    private void SubmitEvidenceServerRpc(string evidenceName, byte[] drawingPng)
+    private void DrawingRpc(byte[] png)
     {
-        if (!isServer || hasSubmittedEvidence || !HasAssignedType ||
-            !IsDrawingType(Type) || string.IsNullOrWhiteSpace(evidenceName) ||
-            drawingPng == null || drawingPng.Length == 0 ||
-            drawingPng.Length > MaximumDrawingBytes)
-            return;
-
-        var evidenceSession = NetworkEvidenceSession.instance;
-        if (evidenceSession == null)
-            evidenceSession = FindAnyObjectByType<NetworkEvidenceSession>(FindObjectsInactive.Include);
-
-        bool accepted = evidenceSession != null &&
-                        evidenceSession.InstallSubmittedEvidence(evidenceName.Trim(), drawingPng);
-
-        if (accepted)
-            hasSubmittedEvidence = true;
-
-        if (owner.HasValue)
-            EvidenceResultTargetRpc(owner.Value, accepted);
+        if (!isServer || CourtTrial.Instance == null || !owner.HasValue) return;
+        bool accepted = CourtTrial.Instance.SubmitWheels(this, png);
+        DrawingResultRpc(owner.Value, accepted);
     }
-
     [TargetRpc]
-    private void EvidenceResultTargetRpc(PlayerID target, bool accepted)
+    private void DrawingResultRpc(PlayerID target, bool accepted)
     {
-        if (localEvidenceSession == null)
-            localEvidenceSession = NetworkEvidenceSession.instance;
-
-        if (localEvidenceSession != null)
-            localEvidenceSession.ReportSubmissionResult(accepted);
+        if (CourtTrial.Instance != null) CourtTrial.Instance.DrawingResult(accepted);
     }
-
-    [ServerRpc(channel: Channel.ReliableOrdered, mtuExceeded: MTUBehaviour.Fragment)]
-    private void SubmitDrawingServerRpc(byte[] drawingPng)
+    public void CancelMotion() { if (isOwner) CancelRpc(); }
+    [ServerRpc]
+    private void CancelRpc() { if (isServer && CourtTrial.Instance != null) CourtTrial.Instance.Release(this); }
+    public void Verdict(bool guilty) { if (isOwner) VerdictRpc(guilty); }
+    [ServerRpc]
+    private void VerdictRpc(bool guilty)
     {
-        if (!isServer || !HasAssignedType || !IsDrawingType(Type) ||
-            drawingPng == null || drawingPng.Length == 0 ||
-            drawingPng.Length > MaximumDrawingBytes)
-            return;
-
-        var paintSession = NetworkWheelPaintSession.instance;
-        if (paintSession == null)
-            paintSession = FindAnyObjectByType<NetworkWheelPaintSession>(FindObjectsInactive.Include);
-
-        bool installed = paintSession != null && paintSession.InstallNetworkDrawing(Type, drawingPng);
-        if (installed)
-            Debug.Log($"Host installed the received {Type} wheel drawing.", this);
-        else
-            Debug.LogError($"Host could not install the received {Type} wheel drawing.", this);
-
-        if (owner.HasValue)
-            DrawingResultTargetRpc(owner.Value, installed);
+        if (isServer && Type == PlayerType.Judge && CourtTrial.Instance != null) CourtTrial.Instance.Verdict(guilty);
     }
-
-    [TargetRpc]
-    private void DrawingResultTargetRpc(PlayerID target, bool installed)
-    {
-        if (!installed)
-            Debug.LogError("The host received the wheel drawing but could not install it.", this);
-    }
-
-    private static bool IsDrawingType(PlayerType playerType)
-    {
-        return playerType == PlayerType.Prosecutor || playerType == PlayerType.Defendant;
-    }
-
     private void OnDisable()
     {
-        if (serverAssignmentRoutine != null)
-        {
-            StopCoroutine(serverAssignmentRoutine);
-            serverAssignmentRoutine = null;
-        }
-
-        ReleaseLocalPresentation();
-    }
-
-    private void ReleaseLocalPresentation()
-    {
-        if (!localPresentationConfigured)
-            return;
-
-        if (localEvidenceSession != null)
-        {
-            localEvidenceSession.ReleaseLocalPlayer(SendEvidenceToHost);
-            localEvidenceSession = null;
-            localPresentationConfigured = false;
-            return;
-        }
-
-        var paintSession = NetworkWheelPaintSession.instance;
-        if (paintSession != null)
-            paintSession.ReleaseLocalPlayer(SendDrawingToHost);
-        localPresentationConfigured = false;
+        if (isServer && CourtTrial.Instance != null) CourtTrial.Instance.Release(this);
     }
 }

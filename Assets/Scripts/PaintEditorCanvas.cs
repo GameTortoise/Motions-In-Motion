@@ -109,27 +109,27 @@ public sealed class PaintEditorCanvas : MonoBehaviour
 
     private void Update()
     {
-        if (rootCanvas == null || !rootCanvas.enabled || drawingRect == null || Mouse.current == null)
+        if (rootCanvas == null || !rootCanvas.enabled || drawingRect == null || Pointer.current == null)
             return;
 
-        var mouse = Mouse.current;
+        var mouse = Pointer.current;
         var screenPoint = mouse.position.ReadValue();
         var inside = TryGetPixel(screenPoint, out var pixel);
 
-        if (mouse.leftButton.wasPressedThisFrame && inside)
+        if (mouse.press.wasPressedThisFrame && inside)
         {
             BeginStroke();
             drawing = true;
             previousPixel = pixel;
             DrawLine(pixel, pixel);
         }
-        else if (drawing && mouse.leftButton.isPressed && inside)
+        else if (drawing && mouse.press.isPressed && inside)
         {
             DrawLine(previousPixel, pixel);
             previousPixel = pixel;
         }
 
-        if (mouse.leftButton.wasReleasedThisFrame)
+        if (mouse.press.wasReleasedThisFrame)
         {
             drawing = false;
             FinishStroke();

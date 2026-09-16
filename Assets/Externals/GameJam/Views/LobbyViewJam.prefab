@@ -410,7 +410,7 @@ MonoBehaviour:
   _microphoneButton: {fileID: 912233329276039380}
   _microphoneText: {fileID: 8554353706684320853}
   _microphoneFeature: {fileID: 2708874007808528633}
-  _minimumPlayersToStart: 5
+  _minimumPlayersToStart: 3
   _lobbyStatus: {fileID: 3961610950124882943}
   _lobbyStatusDetails: {fileID: 1563149119021195414}
   _connectToPurrnetInLobby: 0
