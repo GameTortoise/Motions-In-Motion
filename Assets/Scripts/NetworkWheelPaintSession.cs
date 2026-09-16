@@ -7,9 +7,6 @@ using UnityEngine;
 [DisallowMultipleComponent]
 public sealed class NetworkWheelPaintSession : MonoBehaviour
 {
-    [Header("Team")]
-    [SerializeField] private bool defendant = true;
-
     [Header("Scene references")]
     [SerializeField] private PaintEditorCanvas paintEditorPrefab;
     [SerializeField] private CarDrawingWheelInstaller leftCar;
@@ -44,6 +41,7 @@ public sealed class NetworkWheelPaintSession : MonoBehaviour
         networking = Networking.instance;
         networking.drawingReceivedOnHost += OnDrawingReceivedOnHost;
         networking.drawingReceiptReceived += OnDrawingReceiptReceived;
+        networking.localPlayerTypeChanged += OnLocalPlayerTypeChanged;
         manager.RegisterEvents(OnNetworkStarted, OnNetworkStopped);
     }
 
@@ -56,6 +54,7 @@ public sealed class NetworkWheelPaintSession : MonoBehaviour
         {
             networking.drawingReceivedOnHost -= OnDrawingReceivedOnHost;
             networking.drawingReceiptReceived -= OnDrawingReceiptReceived;
+            networking.localPlayerTypeChanged -= OnLocalPlayerTypeChanged;
         }
 
         if (manager != null)
@@ -85,12 +84,20 @@ public sealed class NetworkWheelPaintSession : MonoBehaviour
         }
     }
 
+    private void OnLocalPlayerTypeChanged(PlayerType playerType)
+    {
+        if (manager != null && manager.isClient)
+            ConfigureLocalPresentation();
+    }
+
     private void LateUpdate()
     {
         if (manager == null || !manager.isClient)
             return;
 
-        bool shouldShowEditor = !manager.isServer;
+        bool shouldShowEditor = !manager.isServer && networking != null &&
+                                networking.hasLocalPlayerType &&
+                                Networking.IsDrawingRole(networking.localPlayerType);
         if (!presentationConfigured || editorPresentationVisible != shouldShowEditor)
             ConfigureLocalPresentation();
 
@@ -103,13 +110,17 @@ public sealed class NetworkWheelPaintSession : MonoBehaviour
         if (manager == null || !manager.isClient)
             return;
 
-        // PurrLobby loads MainGame first and starts this process as either a host
-        // (server + client) or a joining client. The actual server state is the
-        // authoritative distinction; lobby startup flags are not.
-        bool showEditor = !manager.isServer;
+        // The server-assigned role is authoritative. A client cannot choose its
+        // own team or the car that receives its wheel drawing.
+        bool showEditor = !manager.isServer && networking != null &&
+                          networking.hasLocalPlayerType &&
+                          Networking.IsDrawingRole(networking.localPlayerType);
+        bool showRegularPresentation = manager.isServer ||
+                                       (networking != null && networking.hasLocalPlayerType &&
+                                        networking.localPlayerType == PlayerType.Host);
         presentationConfigured = true;
         editorPresentationVisible = showEditor;
-        SetRegularPresentationVisible(!showEditor);
+        SetRegularPresentationVisible(showRegularPresentation);
 
         if (!showEditor)
         {
@@ -142,7 +153,7 @@ public sealed class NetworkWheelPaintSession : MonoBehaviour
         editorRect.sizeDelta = Vector2.zero;
         editorRect.pivot = new Vector2(0.5f, 0.5f);
         localEditor.transform.localScale = Vector3.one;
-        localEditor.name = defendant ? "Defendant Wheel Paint Editor" : "Other Team Wheel Paint Editor";
+        localEditor.name = $"{networking.localPlayerType} Wheel Paint Editor";
         localEditor.DrawingSubmitted -= SubmitLocalDrawing;
         localEditor.DrawingSubmitted += SubmitLocalDrawing;
         localEditor.SetToggleButtonVisible(false);
@@ -152,29 +163,19 @@ public sealed class NetworkWheelPaintSession : MonoBehaviour
 
     private bool SubmitLocalDrawing(byte[] pngData)
     {
-        if (manager == null || !manager.isClient || !IsValidDrawing(pngData))
+        if (manager == null || !manager.isClient || manager.isServer || networking == null ||
+            !networking.hasLocalPlayerType || !Networking.IsDrawingRole(networking.localPlayerType) ||
+            !IsValidDrawing(pngData))
             return false;
 
         uint submissionId = ++nextSubmissionId;
         if (submissionId == 0)
             submissionId = ++nextSubmissionId;
 
-        if (manager.isServer)
-        {
-            OnDrawingReceivedOnHost(manager.localPlayer, new WheelDrawingUpload
-            {
-                submissionId = submissionId,
-                defendant = defendant,
-                pngData = pngData
-            });
-        }
-        else
-        {
-            pendingSubmissionId = submissionId;
-            pendingDrawing = pngData;
-            pendingFailureLogged = false;
-            SendPendingDrawing();
-        }
+        pendingSubmissionId = submissionId;
+        pendingDrawing = pngData;
+        pendingFailureLogged = false;
+        SendPendingDrawing();
 
         return true;
     }
@@ -184,7 +185,7 @@ public sealed class NetworkWheelPaintSession : MonoBehaviour
         if (manager == null || !manager.isClient || manager.isServer || pendingDrawing == null)
             return;
 
-        if (networking != null && networking.SendDrawingToHost(pendingSubmissionId, defendant, pendingDrawing))
+        if (networking != null && networking.SendDrawingToHost(pendingSubmissionId, pendingDrawing))
             nextSubmissionRetryTime = Time.unscaledTime + 2f;
         else
             nextSubmissionRetryTime = Time.unscaledTime + 0.5f;
@@ -207,14 +208,23 @@ public sealed class NetworkWheelPaintSession : MonoBehaviour
             return;
         }
 
-        var targetCar = upload.defendant ? leftCar : rightCar;
+        if (!Networking.IsDrawingRole(upload.playerType) ||
+            !networking.TryGetPlayerType(sender, out PlayerType authoritativeType) ||
+            authoritativeType != upload.playerType)
+        {
+            networking.SendDrawingReceipt(sender, upload.submissionId, false);
+            return;
+        }
+
+        // Defendants draw the left car; prosecutors draw the right car.
+        var targetCar = authoritativeType == PlayerType.Defendant ? leftCar : rightCar;
         bool installed = targetCar != null &&
                          targetCar.InstallPngAsWheels(upload.pngData, maximumDrawingDimension);
 
         if (installed)
         {
             lastAcceptedSubmission[sender] = upload.submissionId;
-            Debug.Log($"Installed wheel drawing {upload.submissionId} from player {sender} on the host car.", this);
+            Debug.Log($"Installed {authoritativeType} wheel drawing {upload.submissionId} from player {sender} on the host car.", this);
         }
         else
         {

@@ -5,11 +5,31 @@ using PurrNet;
 using PurrNet.Transports;
 using UnityEngine;
 
+public enum PlayerType : byte
+{
+    Host = 0,
+    Prosecutor = 1,
+    Defendant = 2,
+    Judge = 3
+}
+
+[Serializable]
+public sealed class PlayerTypeRequest
+{
+    public byte protocolVersion = 1;
+}
+
+[Serializable]
+public sealed class PlayerTypeAssignment
+{
+    public PlayerType playerType;
+}
+
 [Serializable]
 public sealed class WheelDrawingUpload
 {
     public uint submissionId;
-    public bool defendant;
+    public PlayerType playerType;
     public byte[] pngData;
 }
 
@@ -17,7 +37,6 @@ public sealed class WheelDrawingUpload
 public sealed class WheelDrawingChunk
 {
     public uint submissionId;
-    public bool defendant;
     public int totalBytes;
     public int chunkIndex;
     public int chunkCount;
@@ -33,9 +52,12 @@ public sealed class WheelDrawingReceipt
 
 /// <summary>
 /// Scene-owned bridge between the PurrLobby-created NetworkManager and game systems.
-/// Large wheel PNGs are split into small reliable messages so PurrTransport never
-/// has to carry a multi-megabyte broadcast as one packet.
+/// The host owns player roles and derives each drawing's target car from the sender's
+/// server-side role. Large PNGs are split into reliable transport-sized messages.
 /// </summary>
+[RegisterNetworkType(typeof(PlayerType))]
+[RegisterNetworkType(typeof(PlayerTypeRequest))]
+[RegisterNetworkType(typeof(PlayerTypeAssignment))]
 [RegisterNetworkType(typeof(WheelDrawingChunk))]
 [RegisterNetworkType(typeof(WheelDrawingReceipt))]
 [DefaultExecutionOrder(-1100)]
@@ -46,10 +68,10 @@ public sealed class Networking : MonoBehaviour
     private const int MaximumDrawingBytes = 2 * 1024 * 1024;
     private const int MaximumChunkCount = MaximumDrawingBytes / ChunkPayloadBytes + 1;
     private const float IncompleteTransferLifetime = 15f;
+    private const float RoleRequestInterval = 1f;
 
     private sealed class IncomingDrawing
     {
-        public bool defendant;
         public int totalBytes;
         public int chunkCount;
         public byte[][] chunks;
@@ -62,12 +84,19 @@ public sealed class Networking : MonoBehaviour
 
     public event Action<PlayerID, WheelDrawingUpload> drawingReceivedOnHost;
     public event Action<WheelDrawingReceipt> drawingReceiptReceived;
+    public event Action<PlayerType> localPlayerTypeChanged;
+    public event Action<PlayerID, PlayerType> playerTypeAssignedOnHost;
+
+    public bool hasLocalPlayerType { get; private set; }
+    public PlayerType localPlayerType { get; private set; }
 
     private readonly Dictionary<PlayerID, Dictionary<uint, IncomingDrawing>> incomingByPlayer = new();
+    private readonly Dictionary<PlayerID, PlayerType> playerTypes = new();
     private NetworkManager manager;
     private bool serverSubscribed;
     private bool clientSubscribed;
     private float nextCleanupTime;
+    private float nextRoleRequestTime;
 
     private void Awake()
     {
@@ -92,6 +121,12 @@ public sealed class Networking : MonoBehaviour
 
     private void Update()
     {
+        if (clientSubscribed && !hasLocalPlayerType && manager != null && manager.isClient &&
+            !manager.isServer && Time.unscaledTime >= nextRoleRequestTime)
+        {
+            RequestPlayerType();
+        }
+
         if (!serverSubscribed || Time.unscaledTime < nextCleanupTime)
             return;
 
@@ -112,11 +147,21 @@ public sealed class Networking : MonoBehaviour
             instance = null;
     }
 
-    public bool SendDrawingToHost(uint submissionId, bool defendant, byte[] pngData)
+    public static bool IsDrawingRole(PlayerType playerType)
     {
-        if (manager == null || !manager.isClient || manager.isServer ||
-            submissionId == 0 || pngData == null || pngData.Length == 0 ||
-            pngData.Length > MaximumDrawingBytes)
+        return playerType == PlayerType.Prosecutor || playerType == PlayerType.Defendant;
+    }
+
+    public bool TryGetPlayerType(PlayerID player, out PlayerType playerType)
+    {
+        return playerTypes.TryGetValue(player, out playerType);
+    }
+
+    public bool SendDrawingToHost(uint submissionId, byte[] pngData)
+    {
+        if (manager == null || !manager.isClient || manager.isServer || !hasLocalPlayerType ||
+            !IsDrawingRole(localPlayerType) || submissionId == 0 || pngData == null ||
+            pngData.Length == 0 || pngData.Length > MaximumDrawingBytes)
             return false;
 
         int chunkCount = (pngData.Length + ChunkPayloadBytes - 1) / ChunkPayloadBytes;
@@ -130,7 +175,6 @@ public sealed class Networking : MonoBehaviour
             manager.SendToServer(new WheelDrawingChunk
             {
                 submissionId = submissionId,
-                defendant = defendant,
                 totalBytes = pngData.Length,
                 chunkIndex = chunkIndex,
                 chunkCount = chunkCount,
@@ -159,13 +203,28 @@ public sealed class Networking : MonoBehaviour
 
         if (asServer && !serverSubscribed)
         {
+            manager.Subscribe<PlayerTypeRequest>(OnPlayerTypeRequested, true);
             manager.Subscribe<WheelDrawingChunk>(OnDrawingChunkReceived, true);
+            manager.onPlayerJoined += OnPlayerJoined;
+            manager.onPlayerLeft += OnPlayerLeft;
             serverSubscribed = true;
+
+            if (manager.isLocalPlayerReady)
+            {
+                AssignPlayerType(manager.localPlayer, PlayerType.Host);
+                SetLocalPlayerType(PlayerType.Host);
+            }
         }
         else if (!asServer && !clientSubscribed)
         {
+            manager.Subscribe<PlayerTypeAssignment>(OnPlayerTypeAssignmentReceived, false);
             manager.Subscribe<WheelDrawingReceipt>(OnDrawingReceiptReceived, false);
             clientSubscribed = true;
+
+            if (manager.isServer)
+                SetLocalPlayerType(PlayerType.Host);
+            else
+                RequestPlayerType();
         }
     }
 
@@ -177,10 +236,101 @@ public sealed class Networking : MonoBehaviour
             RemoveClientSubscription();
     }
 
+    private void OnPlayerJoined(PlayerID player, bool isReconnect, bool asServer)
+    {
+        if (!asServer || manager == null || !manager.isServer)
+            return;
+
+        PlayerType playerType = player == manager.localPlayer
+            ? PlayerType.Host
+            : ChooseRandomDrawingRole();
+        AssignPlayerType(player, playerType);
+        SendPlayerType(player, playerTypes[player]);
+
+        if (player == manager.localPlayer)
+            SetLocalPlayerType(PlayerType.Host);
+    }
+
+    private void OnPlayerLeft(PlayerID player, bool asServer)
+    {
+        if (!asServer)
+            return;
+
+        playerTypes.Remove(player);
+        incomingByPlayer.Remove(player);
+    }
+
+    private void OnPlayerTypeRequested(PlayerID sender, PlayerTypeRequest request, bool asServer)
+    {
+        if (!asServer || manager == null || !manager.isServer || request == null)
+            return;
+
+        PlayerType playerType = sender == manager.localPlayer
+            ? PlayerType.Host
+            : ChooseRandomDrawingRole();
+        AssignPlayerType(sender, playerType);
+        SendPlayerType(sender, playerTypes[sender]);
+    }
+
+    private void OnPlayerTypeAssignmentReceived(PlayerID sender, PlayerTypeAssignment assignment, bool asServer)
+    {
+        if (!asServer && assignment != null)
+            SetLocalPlayerType(assignment.playerType);
+    }
+
+    private void AssignPlayerType(PlayerID player, PlayerType playerType)
+    {
+        if (playerTypes.ContainsKey(player))
+            return;
+
+        playerTypes.Add(player, playerType);
+        playerTypeAssignedOnHost?.Invoke(player, playerType);
+        Debug.Log($"Assigned network player {player} the role {playerType}.", this);
+    }
+
+    private static PlayerType ChooseRandomDrawingRole()
+    {
+        return UnityEngine.Random.value < 0.5f ? PlayerType.Prosecutor : PlayerType.Defendant;
+    }
+
+    private void SendPlayerType(PlayerID player, PlayerType playerType)
+    {
+        manager.Send(player, new PlayerTypeAssignment
+        {
+            playerType = playerType
+        }, Channel.ReliableOrdered);
+    }
+
+    private void RequestPlayerType()
+    {
+        if (manager == null || !manager.isClient || manager.isServer)
+            return;
+
+        nextRoleRequestTime = Time.unscaledTime + RoleRequestInterval;
+        manager.SendToServer(new PlayerTypeRequest(), Channel.ReliableOrdered);
+    }
+
+    private void SetLocalPlayerType(PlayerType playerType)
+    {
+        if (hasLocalPlayerType && localPlayerType == playerType)
+            return;
+
+        localPlayerType = playerType;
+        hasLocalPlayerType = true;
+        localPlayerTypeChanged?.Invoke(playerType);
+        Debug.Log($"This player is {playerType}.", this);
+    }
+
     private void OnDrawingChunkReceived(PlayerID sender, WheelDrawingChunk chunk, bool asServer)
     {
         if (!asServer || !IsValidChunk(chunk))
             return;
+
+        if (!playerTypes.TryGetValue(sender, out PlayerType senderType) || !IsDrawingRole(senderType))
+        {
+            SendDrawingReceipt(sender, chunk.submissionId, false);
+            return;
+        }
 
         if (!incomingByPlayer.TryGetValue(sender, out var playerTransfers))
         {
@@ -189,12 +339,10 @@ public sealed class Networking : MonoBehaviour
         }
 
         if (!playerTransfers.TryGetValue(chunk.submissionId, out var incoming) ||
-            incoming.defendant != chunk.defendant || incoming.totalBytes != chunk.totalBytes ||
-            incoming.chunkCount != chunk.chunkCount)
+            incoming.totalBytes != chunk.totalBytes || incoming.chunkCount != chunk.chunkCount)
         {
             incoming = new IncomingDrawing
             {
-                defendant = chunk.defendant,
                 totalBytes = chunk.totalBytes,
                 chunkCount = chunk.chunkCount,
                 chunks = new byte[chunk.chunkCount][],
@@ -233,7 +381,7 @@ public sealed class Networking : MonoBehaviour
         drawingReceivedOnHost?.Invoke(sender, new WheelDrawingUpload
         {
             submissionId = chunk.submissionId,
-            defendant = incoming.defendant,
+            playerType = senderType,
             pngData = pngData
         });
     }
@@ -290,16 +438,23 @@ public sealed class Networking : MonoBehaviour
             return;
 
         serverSubscribed = false;
+        manager.Unsubscribe<PlayerTypeRequest>(OnPlayerTypeRequested, true);
         manager.Unsubscribe<WheelDrawingChunk>(OnDrawingChunkReceived, true);
+        manager.onPlayerJoined -= OnPlayerJoined;
+        manager.onPlayerLeft -= OnPlayerLeft;
         incomingByPlayer.Clear();
+        playerTypes.Clear();
     }
 
     private void RemoveClientSubscription()
     {
-        if (!clientSubscribed || manager == null)
-            return;
+        if (clientSubscribed && manager != null)
+        {
+            clientSubscribed = false;
+            manager.Unsubscribe<PlayerTypeAssignment>(OnPlayerTypeAssignmentReceived, false);
+            manager.Unsubscribe<WheelDrawingReceipt>(OnDrawingReceiptReceived, false);
+        }
 
-        clientSubscribed = false;
-        manager.Unsubscribe<WheelDrawingReceipt>(OnDrawingReceiptReceived, false);
+        hasLocalPlayerType = false;
     }
 }
