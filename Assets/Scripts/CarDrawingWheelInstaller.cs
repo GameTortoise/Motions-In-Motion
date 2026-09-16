@@ -88,6 +88,12 @@ public sealed class CarDrawingWheelInstaller : MonoBehaviour
         return true;
     }
 
+    /// <summary>Selects this car for the next call to TryInstallDrawing.</summary>
+    public void SelectForNextDrawing()
+    {
+        activeInstaller = this;
+    }
+
     public void InstallDrawingAsWheels(GameObject drawing)
     {
         if (drawing == null || wheelMounts.Count == 0)

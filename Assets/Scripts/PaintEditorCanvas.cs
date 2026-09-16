@@ -8,6 +8,12 @@ using UnityEngine.UI;
 [RequireComponent(typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster))]
 public sealed class PaintEditorCanvas : MonoBehaviour
 {
+    /// <summary>
+    /// A network owner can consume the completed PNG here. Returning true prevents
+    /// the editor from installing a local-only wheel.
+    /// </summary>
+    public event Func<byte[], bool> DrawingSubmitted;
+
     private enum PaintTool
     {
         Pen,
@@ -19,6 +25,7 @@ public sealed class PaintEditorCanvas : MonoBehaviour
     [SerializeField, Min(128)] private int textureWidth = 1280;
     [SerializeField, Min(128)] private int textureHeight = 720;
     [SerializeField] private bool startOpen;
+    [SerializeField] private bool allowGuiToggle;
     [SerializeField] private bool blackPenOnly;
 
     [Header("Default brush sizes")]
@@ -469,6 +476,14 @@ public sealed class PaintEditorCanvas : MonoBehaviour
         var polygonCollider = worldDrawing.AddComponent<PolygonCollider2D>();
         CopySpritePhysicsShape(sprite, polygonCollider);
         worldDrawing.AddComponent<Rigidbody2D>();
+
+        var drawingPng = worldTexture.EncodeToPNG();
+        if (DrawingSubmitted != null && DrawingSubmitted.Invoke(drawingPng))
+        {
+            Destroy(worldDrawing);
+            SetOpen(false);
+            return null;
+        }
 
         // MainGame's car claims this object here and turns it into its next wheel.
         CarDrawingWheelInstaller.TryInstallDrawing(worldDrawing);
