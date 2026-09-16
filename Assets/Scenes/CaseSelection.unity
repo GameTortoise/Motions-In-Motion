@@ -550,7 +550,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 7efc165dd1a540e4e87045b585daa205, type: 2}
   - {fileID: 11400000, guid: 55e8263dcb834784dbd17e72f8dcd540, type: 2}
   caseNameText: {fileID: 1914879905}
-  caseDescriptionText: {fileID: 0}
+  caseDescriptionText: {fileID: 25645334}
 --- !u!4 &862829243
 Transform:
   m_ObjectHideFlags: 0
@@ -931,7 +931,7 @@ MonoBehaviour:
   m_VertexBufferAutoSizeReduction: 0
   m_useMaxVisibleDescender: 1
   m_pageToDisplay: 1
-  m_margin: {x: 0, y: 0, z: -126.726074, w: 0}
+  m_margin: {x: -224.44266, y: -48.858276, z: -454.99255, w: 0}
   m_isUsingLegacyAnimationComponent: 0
   m_isVolumetricText: 0
   m_hasFontAssetChanged: 0
