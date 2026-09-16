@@ -1,0 +1,56 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5e6971ff3d637f14aabae16a22ce31d3, type: 3}
+  m_Name: theStateOfMontanaVsJosephCabral
+  m_EditorClassIdentifier: Assembly-CSharp::CaseData
+  caseName: 'The State of Montana vs Joseph Cabral '
+  caseDescription: "\tThe Prosecution, The State Of Montana, alleges that the Defendant, Joseph Cabral, attempted to cause the destruction of a military radio tower with smuggled bombs. The State Of Montana brings this action against Joseph Cabral on the grounds of Destruction of Government Property and Use of a Weapon of Mass Destruction, alleging that Cabral knowingly transported and deployed explosive devices with the intent to damage a facility operated by the United States military. Joseph Cabral disputes the allegations and maintains that he was acting under orders from a government contractor and therefore reasonably believed that his actions were authorized.\r\n"
+  caseAnswer: 'Guilty on the charge of Use of a Weapon of Mass Destruction '
+  evidence:
+  - evidenceName: Evidence A
+    description: 'A signed contract between Joseph Cabral and Blackridge Defense Solutions authorizes Cabral to "neutralize and permanently disable" the Montana military radio tower. The contract does not specify a particular method for accomplishing the objective.
+
+'
+    image: {fileID: 0}
+  - evidenceName: Evidence B
+    description: 'A military report classifies the radio tower as a Category IV Communications Installation. The report states that the facility is considered strategically important but contains no information regarding the methods authorized for its destruction.
+
+'
+    image: {fileID: 0}
+  - evidenceName: Evidence C
+    description: 'A weapons technician examining material recovered from the incident reported that it contained an unusual radioactive substance. The technician testified that the material could be dangerous if sufficiently dispersed, but could not determine from the recovered fragments exactly how Cabral intended to use it.
+
+'
+    image: {fileID: 0}
+  - evidenceName: Evidence D
+    description: Blackridge Defense Solutions provided Cabral with a non-exhaustive list of equipment commonly used for operations involving the destruction of military infrastructure. The list includes several types of explosives, electronic equipment, and specialized demolition tools. Cabral's recovered equipment does not completely match the items on the list.
+    image: {fileID: 0}
+  - evidenceName: Evidence E
+    description: 'A shipping manifest identifies Joseph Cabral as the recipient of a crate labeled "Industrial Communications Equipment, Non-Hazardous." The crate was later discovered to have contained material associated with the explosive device. The manifest does not identify who packed or labeled the crate.
+
+'
+    image: {fileID: 0}
+  - evidenceName: Evidence F
+    description: 'An internal Blackridge memo states that Cabral was given a high level of discretion over the equipment used during the operation. Another section of the same memo states that contractors were expected to follow all applicable weapons regulations and company safety procedures unless in an emergency situation.
+
+'
+    image: {fileID: 0}
+  - evidenceName: Evidence G
+    description: 'A copy of Cabral''s contract contains a clause stating that he would not be held responsible for "reasonable operational decisions made in pursuit of the assigned objective." Blackridge Defense Solutions representatives later testified that the clause was intended to protect contractors from liability for ordinary equipment failures and unexpected circumstances.
+
+'
+    image: {fileID: 0}
+  - evidenceName: Evidence H
+    description: 'Forensic analysis determined that the recovered device was capable of dispersing radioactive material over a considerably larger area than would normally be necessary to damage the radio tower. The analyst could not determine from the remains whether this capability was intentional or simply a consequence of the device''s design.
+
+'
+    image: {fileID: 0}
