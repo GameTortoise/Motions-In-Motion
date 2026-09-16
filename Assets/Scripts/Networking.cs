@@ -1,3 +1,4 @@
+using System.Collections;
 using PurrNet;
 using PurrNet.Modules;
 using PurrNet.Transports;
@@ -24,37 +25,62 @@ public sealed class Networking : NetworkBehaviour
     public PlayerType Type { get; private set; } = PlayerType.Host;
     public bool HasAssignedType { get; private set; }
 
-    private bool serverTypeAssigned;
+    private PlayerID? serverAssignedOwner;
+    private Coroutine serverAssignmentRoutine;
     private bool localPresentationConfigured;
     private bool hasSubmittedEvidence;
     private NetworkEvidenceSession localEvidenceSession;
 
     protected override void OnSpawned()
     {
-        AssignTypeOnServer();
+        QueueServerTypeAssignment();
         ConfigureOwnedPlayer();
     }
 
     protected override void OnOwnerChanged(PlayerID? oldOwner, PlayerID? newOwner, bool asServer)
     {
         if (asServer)
-            AssignTypeOnServer();
+            QueueServerTypeAssignment();
 
         ConfigureOwnedPlayer();
     }
 
-    private void AssignTypeOnServer()
+    private void QueueServerTypeAssignment()
     {
-        if (serverTypeAssigned || !isServer || !owner.HasValue)
+        if (!isServer)
             return;
 
-        var assignedType = owner.Value == networkManager.localPlayer
+        if (serverAssignmentRoutine != null)
+            StopCoroutine(serverAssignmentRoutine);
+
+        serverAssignmentRoutine = StartCoroutine(AssignTypeAfterOwnershipSettles());
+    }
+
+    private IEnumerator AssignTypeAfterOwnershipSettles()
+    {
+        // PlayerSpawner spawns first and calls GiveOwnership immediately afterward.
+        // Waiting one frame prevents that temporary spawn owner from becoming Host.
+        yield return null;
+
+        while (isSpawned && isServer && networkManager.isHost && !networkManager.isLocalPlayerReady)
+            yield return null;
+
+        serverAssignmentRoutine = null;
+
+        if (!isSpawned || !isServer || !owner.HasValue)
+            yield break;
+
+        var settledOwner = owner.Value;
+        if (serverAssignedOwner.HasValue && serverAssignedOwner.Value == settledOwner)
+            yield break;
+
+        var assignedType = networkManager.isHost && settledOwner == networkManager.localPlayer
             ? PlayerType.Host
             : RandomDrawingType();
 
-        serverTypeAssigned = true;
+        serverAssignedOwner = settledOwner;
         AssignTypeRpc(assignedType);
-        Debug.Log($"Assigned player {owner.Value} the role {assignedType}.", this);
+        Debug.Log($"Assigned settled player {settledOwner} the role {assignedType}.", this);
     }
 
     private static PlayerType RandomDrawingType()
@@ -65,6 +91,9 @@ public sealed class Networking : NetworkBehaviour
     [ObserversRpc(runLocally: true, bufferLast: true)]
     private void AssignTypeRpc(PlayerType assignedType)
     {
+        if (HasAssignedType && Type != assignedType)
+            ReleaseLocalPresentation();
+
         Type = assignedType;
         HasAssignedType = true;
         ConfigureOwnedPlayer();
@@ -194,6 +223,17 @@ public sealed class Networking : NetworkBehaviour
     }
 
     private void OnDisable()
+    {
+        if (serverAssignmentRoutine != null)
+        {
+            StopCoroutine(serverAssignmentRoutine);
+            serverAssignmentRoutine = null;
+        }
+
+        ReleaseLocalPresentation();
+    }
+
+    private void ReleaseLocalPresentation()
     {
         if (!localPresentationConfigured)
             return;
