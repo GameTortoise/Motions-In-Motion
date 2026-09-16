@@ -1,0 +1,769 @@
+fileFormatVersion: 2
+guid: ecf85fcbb9131a5429073747b4b0cbdb
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: 417906273804698543
+    second: JackboxJamLogo_0
+  - first:
+      213: 3804506151370562144
+    second: JackboxJamLogo_1
+  - first:
+      213: 5022450561764029022
+    second: JackboxJamLogo_2
+  - first:
+      213: 6936762551177687731
+    second: JackboxJamLogo_3
+  - first:
+      213: 4464581169040544411
+    second: JackboxJamLogo_4
+  - first:
+      213: 4047638891020066487
+    second: JackboxJamLogo_5
+  - first:
+      213: 7756186532910400931
+    second: JackboxJamLogo_6
+  - first:
+      213: 8436324762439711664
+    second: JackboxJamLogo_7
+  - first:
+      213: -5675801832773487269
+    second: JackboxJamLogo_8
+  - first:
+      213: -8899411149419733661
+    second: JackboxJamLogo_9
+  - first:
+      213: 8790969392204656992
+    second: JackboxJamLogo_10
+  - first:
+      213: -6226677377421968821
+    second: JackboxJamLogo_11
+  - first:
+      213: 6654991485988312458
+    second: JackboxJamLogo_12
+  - first:
+      213: 5186735354598863737
+    second: JackboxJamLogo_13
+  - first:
+      213: 4906826987204750848
+    second: JackboxJamLogo_14
+  - first:
+      213: -2482850361220724511
+    second: JackboxJamLogo_15
+  - first:
+      213: -5033402817551529564
+    second: JackboxJamLogo_16
+  - first:
+      213: 4620710802358956697
+    second: JackboxJamLogo_17
+  - first:
+      213: 3976646652241930415
+    second: JackboxJamLogo_18
+  - first:
+      213: -5079943382299458805
+    second: JackboxJamLogo_19
+  - first:
+      213: 5791503744279075377
+    second: JackboxJamLogo_20
+  - first:
+      213: -7688437329692066338
+    second: JackboxJamLogo_21
+  - first:
+      213: 3059498483097852898
+    second: JackboxJamLogo_22
+  - first:
+      213: 6678165594819461919
+    second: JackboxJamLogo_23
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationMethod: 0
+  spriteTessellationDetail: -1
+  spriteGeometrySubdivision: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: iOS
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: JackboxJamLogo_0
+      rect:
+        serializedVersion: 2
+        x: 21
+        y: 110
+        width: 264
+        height: 389
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: fa34987ba83bcc500800000000000000
+      internalID: 417906273804698543
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: JackboxJamLogo_1
+      rect:
+        serializedVersion: 2
+        x: 258
+        y: 429
+        width: 38
+        height: 13
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 06a1b3200325cc430800000000000000
+      internalID: 3804506151370562144
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: JackboxJamLogo_2
+      rect:
+        serializedVersion: 2
+        x: 292
+        y: 302
+        width: 158
+        height: 184
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e52f7e30d2453b540800000000000000
+      internalID: 5022450561764029022
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: JackboxJamLogo_3
+      rect:
+        serializedVersion: 2
+        x: 478
+        y: 316
+        width: 169
+        height: 159
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3b2bd2aa9c4544060800000000000000
+      internalID: 6936762551177687731
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: JackboxJamLogo_4
+      rect:
+        serializedVersion: 2
+        x: 661
+        y: 314
+        width: 97
+        height: 157
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b925f8b3be065fd30800000000000000
+      internalID: 4464581169040544411
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: JackboxJamLogo_5
+      rect:
+        serializedVersion: 2
+        x: 745
+        y: 292
+        width: 192
+        height: 186
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7be9e46402a1c2830800000000000000
+      internalID: 4047638891020066487
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: JackboxJamLogo_6
+      rect:
+        serializedVersion: 2
+        x: 949
+        y: 297
+        width: 100
+        height: 177
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3a50bc1ce8283ab60800000000000000
+      internalID: 7756186532910400931
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: JackboxJamLogo_7
+      rect:
+        serializedVersion: 2
+        x: 1068
+        y: 304
+        width: 94
+        height: 161
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0bbfc038ca8d31570800000000000000
+      internalID: 8436324762439711664
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: JackboxJamLogo_8
+      rect:
+        serializedVersion: 2
+        x: 263
+        y: 380
+        width: 29
+        height: 13
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b5576060e408b31b0800000000000000
+      internalID: -5675801832773487269
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: JackboxJamLogo_9
+      rect:
+        serializedVersion: 2
+        x: 743
+        y: 377
+        width: 36
+        height: 13
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 36d9fa0f5b0fe7480800000000000000
+      internalID: -8899411149419733661
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: JackboxJamLogo_10
+      rect:
+        serializedVersion: 2
+        x: 268
+        y: 340
+        width: 33
+        height: 13
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 061b0bde51ccff970800000000000000
+      internalID: 8790969392204656992
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: JackboxJamLogo_11
+      rect:
+        serializedVersion: 2
+        x: 311
+        y: 87
+        width: 158
+        height: 184
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b4a7dc36ae56699a0800000000000000
+      internalID: -6226677377421968821
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: JackboxJamLogo_12
+      rect:
+        serializedVersion: 2
+        x: 572
+        y: 264
+        width: 42
+        height: 67
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a8515913f774b5c50800000000000000
+      internalID: 6654991485988312458
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: JackboxJamLogo_13
+      rect:
+        serializedVersion: 2
+        x: 622
+        y: 265
+        width: 38
+        height: 67
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 97333d2135cfaf740800000000000000
+      internalID: 5186735354598863737
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: JackboxJamLogo_14
+      rect:
+        serializedVersion: 2
+        x: 279
+        y: 219
+        width: 37
+        height: 13
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 00ea3aab52d881440800000000000000
+      internalID: 4906826987204750848
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: JackboxJamLogo_15
+      rect:
+        serializedVersion: 2
+        x: 471
+        y: 101
+        width: 171
+        height: 155
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1e80dfc40c42b8dd0800000000000000
+      internalID: -2482850361220724511
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: JackboxJamLogo_16
+      rect:
+        serializedVersion: 2
+        x: 656
+        y: 96
+        width: 97
+        height: 157
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4a904683ec2c52ab0800000000000000
+      internalID: -5033402817551529564
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: JackboxJamLogo_17
+      rect:
+        serializedVersion: 2
+        x: 745
+        y: 207
+        width: 47
+        height: 13
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9927a604eff002040800000000000000
+      internalID: 4620710802358956697
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: JackboxJamLogo_18
+      rect:
+        serializedVersion: 2
+        x: 787
+        y: 76
+        width: 158
+        height: 186
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: fa86020af03ef2730800000000000000
+      internalID: 3976646652241930415
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: JackboxJamLogo_19
+      rect:
+        serializedVersion: 2
+        x: 958
+        y: 70
+        width: 102
+        height: 178
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b03c1f2986a6089b0800000000000000
+      internalID: -5079943382299458805
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: JackboxJamLogo_20
+      rect:
+        serializedVersion: 2
+        x: 283
+        y: 176
+        width: 29
+        height: 13
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 13a591188fd8f5050800000000000000
+      internalID: 5791503744279075377
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: JackboxJamLogo_21
+      rect:
+        serializedVersion: 2
+        x: 734
+        y: 164
+        width: 47
+        height: 13
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: eddf9d5dbfe2d4590800000000000000
+      internalID: -7688437329692066338
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: JackboxJamLogo_22
+      rect:
+        serializedVersion: 2
+        x: 286
+        y: 129
+        width: 31
+        height: 13
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2ebd4e319a5857a20800000000000000
+      internalID: 3059498483097852898
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: JackboxJamLogo_23
+      rect:
+        serializedVersion: 2
+        x: 746
+        y: 128
+        width: 44
+        height: 13
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f13037ed93c9dac50800000000000000
+      internalID: 6678165594819461919
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      JackboxJamLogo_0: 417906273804698543
+      JackboxJamLogo_1: 3804506151370562144
+      JackboxJamLogo_10: 8790969392204656992
+      JackboxJamLogo_11: -6226677377421968821
+      JackboxJamLogo_12: 6654991485988312458
+      JackboxJamLogo_13: 5186735354598863737
+      JackboxJamLogo_14: 4906826987204750848
+      JackboxJamLogo_15: -2482850361220724511
+      JackboxJamLogo_16: -5033402817551529564
+      JackboxJamLogo_17: 4620710802358956697
+      JackboxJamLogo_18: 3976646652241930415
+      JackboxJamLogo_19: -5079943382299458805
+      JackboxJamLogo_2: 5022450561764029022
+      JackboxJamLogo_20: 5791503744279075377
+      JackboxJamLogo_21: -7688437329692066338
+      JackboxJamLogo_22: 3059498483097852898
+      JackboxJamLogo_23: 6678165594819461919
+      JackboxJamLogo_3: 6936762551177687731
+      JackboxJamLogo_4: 4464581169040544411
+      JackboxJamLogo_5: 4047638891020066487
+      JackboxJamLogo_6: 7756186532910400931
+      JackboxJamLogo_7: 8436324762439711664
+      JackboxJamLogo_8: -5675801832773487269
+      JackboxJamLogo_9: -8899411149419733661
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
