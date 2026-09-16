@@ -8,12 +8,13 @@ public class CaseSelectorUI : MonoBehaviour
 
     [Header("UI")]
     public TMP_Text caseNameText;
+    public TMP_Text caseDescriptionText;
 
     private CaseData selectedCase;
 
     private void Start()
     {
-        SelectRandomCase(); // If anyone sees this have an awesome day :)
+        SelectRandomCase();
     }
 
     private void SelectRandomCase()
@@ -21,33 +22,34 @@ public class CaseSelectorUI : MonoBehaviour
         if (cases == null || cases.Length == 0)
         {
             Debug.LogError(
-                "CaseSelectorUI tells us that No cases have been assigned!"
+                "CaseSelectorUI: No cases have been assigned!"
             );
 
             return;
         }
 
-        // Pick random case
-        int randomIndex = Random.Range(
-            0,
-            cases.Length
-        );
+        // Pick a random case
+        int randomIndex = Random.Range(0, cases.Length);
 
         selectedCase = cases[randomIndex];
 
-        // Display its name
+        // Display case name
         if (caseNameText != null)
         {
-            caseNameText.text =
-                selectedCase.caseName;
+            caseNameText.text = selectedCase.caseName;
         }
 
-        // Save it
+        // Display case description
+        if (caseDescriptionText != null)
+        {
+            caseDescriptionText.text =
+                selectedCase.caseDescription;
+        }
+
+        // Save the selected case
         if (GameSession.Instance != null)
         {
-            GameSession.Instance.SetCase(
-                selectedCase
-            );
+            GameSession.Instance.SetCase(selectedCase);
         }
         else
         {
