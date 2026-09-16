@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5e6971ff3d637f14aabae16a22ce31d3, type: 3}
   m_Name: BobVsJerry
   m_EditorClassIdentifier: Assembly-CSharp::CaseData
-  caseName: Bob vs Jerry the Goat
+  caseName: (Funny) Bob vs Jerry the Goat
   caseDescription: "The Plaintiff, Bob, alleges that the Defendant, Jerry the Goat, unlawfully damaged and stole a portion of his property by eating one of the legs of Bob\u2019s wooden living room table made from mostly smoked walnut and some small amounts of oak. Bob brings this action against Jerry on the grounds of vandalism and grand theft, alleging that the value of the property consumed by Jerry exceeds $950. Jerry the Goat disputes the allegations and maintains that the table leg was a perfectly reasonable snack.\r\n"
   caseAnswer: 'Guilty on the charge of vandalism '
   evidence:

@@ -757,24 +757,6 @@ MonoBehaviour:
   maxSelections: 3
   selectionCountText: {fileID: 47968241}
   selectedEvidence: []
---- !u!114 &1225323651
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1225323648}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 79ad0dbd83334c9bb3c1523f0f9b3f18, type: 3}
-  m_Name:
-  m_EditorClassIdentifier: Assembly-CSharp::NetworkEvidenceSession
-  hostBoard: {fileID: 1225323649}
-  paintEditorPrefab: {fileID: 121000000000006, guid: 201ea92e03ac4494bb5424c3e284c6fb, type: 3}
-  maximumGeneratedEvidence: 2
-  maximumDrawingBytes: 2097152
-  maximumDrawingDimension: 2048
-  maximumTitleLength: 80
 --- !u!4 &1225323650
 Transform:
   m_ObjectHideFlags: 0
@@ -790,6 +772,24 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1225323651
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1225323648}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 79ad0dbd83334c9bb3c1523f0f9b3f18, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::NetworkEvidenceSession
+  hostBoard: {fileID: 1225323649}
+  paintEditorPrefab: {fileID: 121000000000006, guid: 201ea92e03ac4494bb5424c3e284c6fb, type: 3}
+  maximumGeneratedEvidence: 2
+  maximumDrawingBytes: 2097152
+  maximumDrawingDimension: 2048
+  maximumTitleLength: 80
 --- !u!1 &1287392482
 GameObject:
   m_ObjectHideFlags: 0
@@ -1121,7 +1121,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 80430407b2664ab8a7df4e773762432e, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EvidencePlayerSpawner
   _playerPrefab: {fileID: 5154484800931780872, guid: 1f6329ff68c80dd46a8bb8e5db77130d, type: 3}
   _ignoreNetworkRules: 0

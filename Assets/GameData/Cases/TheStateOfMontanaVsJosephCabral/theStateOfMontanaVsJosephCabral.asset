@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5e6971ff3d637f14aabae16a22ce31d3, type: 3}
   m_Name: theStateOfMontanaVsJosephCabral
   m_EditorClassIdentifier: Assembly-CSharp::CaseData
-  caseName: 'The State of Montana vs Joseph Cabral '
+  caseName: '(Serious) The State of Montana vs Joseph Cabral '
   caseDescription: "\tThe Prosecution, The State Of Montana, alleges that the Defendant, Joseph Cabral, attempted to cause the destruction of a military radio tower with smuggled bombs. The State Of Montana brings this action against Joseph Cabral on the grounds of Destruction of Government Property and Use of a Weapon of Mass Destruction, alleging that Cabral knowingly transported and deployed explosive devices with the intent to damage a facility operated by the United States military. Joseph Cabral disputes the allegations and maintains that he was acting under orders from a government contractor and therefore reasonably believed that his actions were authorized.\r\n"
   caseAnswer: 'Guilty on the charge of Use of a Weapon of Mass Destruction '
   evidence:
