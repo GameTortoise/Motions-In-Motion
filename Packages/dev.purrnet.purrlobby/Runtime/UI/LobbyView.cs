@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Text;
 using System.Threading.Tasks;
 using PurrNet.UI;
 using TMPro;
@@ -164,6 +165,7 @@ namespace PurrNet.Lobby
                 return false;
 
             int participantCount = 0;
+            bool allParticipantsReady = true;
             foreach (var player in _lobby.players)
             {
                 if (player.isOwner)
@@ -171,11 +173,11 @@ namespace PurrNet.Lobby
 
                 participantCount++;
                 if (!player.isReady)
-                    return false;
+                    allParticipantsReady = false;
             }
 
             // The lobby owner is the TV/display authority and does not count as a player.
-            return participantCount >= _minimumPlayersToStart;
+            return participantCount >= _minimumPlayersToStart && allParticipantsReady;
         }
 
         private void StartGame()
@@ -354,7 +356,9 @@ namespace PurrNet.Lobby
             if (_readyButton)
             {
                 _readyButton.gameObject.SetActive(true);
-                _readyButton.interactable = !localIsDisplayHost || CanHostStartGame();
+                // Keep the host button clickable so an invalid attempt can explain
+                // the missing requirement in chat. TryStartGame remains authoritative.
+                _readyButton.interactable = !localIsDisplayHost || !_gameStarted;
             }
 
             if (localIsDisplayHost)
@@ -403,7 +407,7 @@ namespace PurrNet.Lobby
             // Revalidate on the host at click time; the disabled button is only presentation.
             if (!CanHostStartGame())
             {
-                UpdateLocalPlayerData(_lobby);
+                SendStartRequirementToChat();
                 return;
             }
 
@@ -415,6 +419,53 @@ namespace PurrNet.Lobby
             _lobby.lobbyData.SetData(LOBBY_STATUS_DETAILS_STRING, _lobbyStatusDetails.text);
             StartGame();
         }
+
+        private void SendStartRequirementToChat()
+        {
+            int participantCount = 0;
+            bool allParticipantsReady = true;
+
+            foreach (var player in _lobby.players)
+            {
+                if (player.isOwner)
+                    continue;
+
+                participantCount++;
+                if (!player.isReady)
+                    allParticipantsReady = false;
+            }
+
+            string message;
+            if (participantCount < _minimumPlayersToStart)
+            {
+                message = "Sorry, this game is minimum 5 players. We didn't have time to implement our smaller player amount variants in code.";
+            }
+            else if (!allParticipantsReady)
+            {
+                message = "Chill, man! Not everyone is readied up!";
+            }
+            else
+            {
+                return;
+            }
+
+            _lobby.chat.SendMessage(Encoding.UTF8.GetBytes(message));
+        }
+
+#if !UNITY_WEBGL
+        private void OnGUI()
+        {
+            if (!Application.isPlaying || _lobby?.localPlayer?.isOwner != true || _minimumPlayersToStart <= 1)
+                return;
+
+            if (GUI.Button(new Rect(16f, 16f, 280f, 42f), "DEV: Allow 2-player start"))
+            {
+                // One participant plus the display host is two connected people total.
+                _minimumPlayersToStart = 1;
+                UpdateLocalPlayerData(_lobby);
+            }
+        }
+#endif
 
         private void OnKickPlayer(IPlayer target)
         {
