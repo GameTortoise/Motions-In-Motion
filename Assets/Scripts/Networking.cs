@@ -145,7 +145,6 @@ public sealed class Networking : MonoBehaviour
     {
         if (manager == null || !manager.isServer)
             return;
-        }
 
         manager.Send(player, new WheelDrawingReceipt
         {

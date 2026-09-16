@@ -158,7 +158,6 @@ GameObject:
   - component: {fileID: 3343620868280005057}
   - component: {fileID: 7547594087457626281}
   - component: {fileID: 3839992973359997269}
-  - component: {fileID: 8844017241159200132}
   m_Layer: 0
   m_Name: FreeCamPlayer
   m_TagString: Untagged
@@ -306,30 +305,6 @@ MonoBehaviour:
   _ownerAuth: 1
   _interpolationTiming: 0
   _adaptiveSynchronization: 2
---- !u!114 &8844017241159200132
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5154484800931780872}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: eebe6788196487a47bff27a2ea71eb78, type: 3}
-  m_Name:
-  m_EditorClassIdentifier: Assembly-CSharp::Networking
-  _networkRules: {fileID: 0}
-  _visitiblityRules: {fileID: 0}
-  _isSetup: 0
-  _prefabId: -2147483648
-  _hasPrefabScope: 0
-  _prefabScope: 0
-  _componentIndex: -2147483648
-  _shouldBePooled: 0
-  _parent: {fileID: 0}
-  _invertedPathToNearestParent:
-  _directChildren: []
-  defendant: 1
 --- !u!1 &9125522938505943470
 GameObject:
   m_ObjectHideFlags: 0
