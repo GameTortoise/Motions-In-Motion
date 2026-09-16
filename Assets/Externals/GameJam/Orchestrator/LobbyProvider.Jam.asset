@@ -12,4 +12,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 60a40bbb32e81684e9c767682ab1e745, type: 3}
   m_Name: LobbyProvider.Jam
   m_EditorClassIdentifier: PurrLobby.PurrNet::PurrLobby.PurrNet.PurrNetLobbyProvider
-  _maxPlayers: 8
+  _maxPlayers: 9

@@ -9,7 +9,8 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1dca05c45d0b55b40bcca6a3a40fe6ea, type: 3}
+  m_Script: {fileID: 11500000, guid: 763a0a75464d4e21a386a5ad94ef5db8, type: 3}
   m_Name: GameAllocator.Jam
-  m_EditorClassIdentifier: PurrNet.Lobby.GenericProviders::PurrNet.Lobby.GenericProviders.P2PGameStarter
-  _gameScene: MainGame
+  m_EditorClassIdentifier: Assembly-CSharp::JamPurrTransportGameAllocator
+  gameScene: MainGame
+  useP2P: 1
