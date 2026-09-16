@@ -46,8 +46,7 @@ namespace PurrNet.Lobby
         [SerializeField] private ButtonElement _microphoneButton;
         [SerializeField] private TMP_Text _microphoneText;
         [SerializeField] private GameObject _microphoneFeature;
-        [Space]
-        [SerializeField, Min(1)] private int _minimumPlayersToStart = 3;
+        [Space] [SerializeField, Min(1)] private int _minimumPlayersToStart = 3;
         [SerializeField] private TMP_Text _lobbyStatus;
         [SerializeField] private TMP_Text _lobbyStatusDetails;
         [Space]
@@ -161,6 +160,9 @@ namespace PurrNet.Lobby
 
         private bool CanHostStartGame()
         {
+            //HERE!!!
+            return true;
+            
             if (_lobby?.localPlayer == null || !_lobby.localPlayer.isOwner || _gameStarted)
                 return false;
 
