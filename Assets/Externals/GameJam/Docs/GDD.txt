@@ -1,0 +1,38 @@
+Goal: Win the court case.
+
+2 options: Prewritten, Custom
+
+Game Loop:
+
+1. People write out court cases and answer to the case (guilty/not guilty)
+2. Everyone votes for which court cases to do. Maybe - (If prewritten, they can choose category)
+3. 1 Judge is selected from the people and everyone else is a lawyer and knows the truth but isn't divided into Prosecutors and Defendants yet
+4. Either: Prewritten evidence, or the people write out the evidence beforehand without revealing if the evidence is real or fake.
+5. Lawyers are split into Prosecutor Team, Defendant Team
+6. Evidence is split into team piles evenly between each team
+7. The prosecutor begins making their argument, 15 mins total trial time
+8. People send in motions
+   1. Evidence motions (base) (300 characters)
+      1. Motion to bring forward evidence: select an evidence from your team's evidence pile and send it to court
+      2. Motion to suppress: select an evidence currently in the court and ask the judge to strike it down based on a provided argument
+   2. End of phase motions (slowest)
+      1. Motion for Summary Judgement
+      2. Motion to Complete Explanation
+   3. Objections (faster than normal motions)
+      1. Objection on the basis of Illegal Communication
+      2. Objection on the basis of Poor Logic
+   4. Sending in notes, different vehicles (base)
+      1. For each character above 10, risk factor +1% (stacks w\ car)
+   5. Vehicle
+      1. Pick body at start
+      2. When destroyed, changes terrain and car parts rearranged into obstacles
+      3. Car bodies
+         1. Premade
+         2. Different base risk factors
+         3. Notes increase risk
+      4. Wheels
+         1. Draw wheels at any time
+         2. They just spin
+9. After Motion to Complete Explanation, switch speaking teams
+10. Once timer ends, or Motion for Summary Judgement, Judge makes guilty or not guilty verdict
+11. Winners are determined
