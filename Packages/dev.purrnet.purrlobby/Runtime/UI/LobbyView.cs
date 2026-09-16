@@ -161,7 +161,7 @@ namespace PurrNet.Lobby
         private bool CanHostStartGame()
         {
             //HERE!!!
-            return true;
+            //return true;
             
             if (_lobby?.localPlayer == null || !_lobby.localPlayer.isOwner || _gameStarted)
                 return false;
