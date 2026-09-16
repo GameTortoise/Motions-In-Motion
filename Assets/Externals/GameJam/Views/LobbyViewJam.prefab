@@ -413,7 +413,7 @@ MonoBehaviour:
   _timeToStartGame: 3
   _lobbyStatus: {fileID: 3961610950124882943}
   _lobbyStatusDetails: {fileID: 1563149119021195414}
-  _connectToPurrnetInLobby: 1
+  _connectToPurrnetInLobby: 0
   _lobbyConnection: {fileID: 257896604069459143}
 --- !u!1 &1842517321319689424
 GameObject:
