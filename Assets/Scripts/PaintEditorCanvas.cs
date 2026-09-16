@@ -55,12 +55,20 @@ public sealed class PaintEditorCanvas : MonoBehaviour
     private Color32 activeColor = new(0, 0, 0, 255);
     private Vector2Int previousPixel;
     private bool drawing;
+    private bool permanentOpen;
+    private bool showToggleButton = true;
     private readonly List<List<PixelChange>> undoHistory = new();
     private List<PixelChange> currentStroke;
     private HashSet<int> currentStrokeIndices;
 
     private static readonly Color32 Transparent = new(0, 0, 0, 0);
     private static readonly Color32 MarkerAlpha = new(255, 255, 255, 90);
+
+    /// <summary>
+    /// Invoked when the black-pen editor submits a cropped wheel PNG. Returning true
+    /// means the receiver accepted the drawing and replaces the legacy local spawn.
+    /// </summary>
+    public event Func<byte[], bool> DrawingSubmitted;
 
     private readonly struct PixelChange
     {
@@ -80,6 +88,7 @@ public sealed class PaintEditorCanvas : MonoBehaviour
     {
         rootCanvas = GetComponent<Canvas>();
         raycaster = GetComponent<GraphicRaycaster>();
+        ConfigureFullscreenCanvas();
         BuildInterface();
         CreateDrawingTextures();
         SetOpen(startOpen);
@@ -96,7 +105,7 @@ public sealed class PaintEditorCanvas : MonoBehaviour
 
     private void OnGUI()
     {
-        if (!allowGuiToggle)
+        if (permanentOpen || !showToggleButton)
             return;
 
         var label = rootCanvas != null && rootCanvas.enabled ? "Close Paint" : "Open Paint";
@@ -135,28 +144,57 @@ public sealed class PaintEditorCanvas : MonoBehaviour
 
     public void SetOpen(bool open)
     {
+        if (permanentOpen && !open)
+            return;
+
         if (rootCanvas == null)
             rootCanvas = GetComponent<Canvas>();
         if (raycaster == null)
             raycaster = GetComponent<GraphicRaycaster>();
 
+        if (!gameObject.activeSelf)
+            gameObject.SetActive(true);
+        ConfigureFullscreenCanvas();
         rootCanvas.enabled = open;
         raycaster.enabled = open;
+        if (open)
+            Canvas.ForceUpdateCanvases();
         if (drawing)
             FinishStroke();
         drawing = false;
     }
 
-    public void SetStartOpen(bool open)
+    public void SetPermanentOpen(bool value)
     {
-        startOpen = open;
-        SetOpen(open);
+        permanentOpen = value;
+        if (value)
+            SetOpen(true);
+    }
+
+    public void SetToggleButtonVisible(bool visible)
+    {
+        showToggleButton = visible;
+    }
+
+    private void ConfigureFullscreenCanvas()
+    {
+        var rectTransform = (RectTransform)transform;
+        rectTransform.anchorMin = Vector2.zero;
+        rectTransform.anchorMax = Vector2.one;
+        rectTransform.anchoredPosition = Vector2.zero;
+        rectTransform.sizeDelta = Vector2.zero;
+        rectTransform.pivot = new Vector2(0.5f, 0.5f);
+        rectTransform.localRotation = Quaternion.identity;
+        rectTransform.localScale = Vector3.one;
+
+        rootCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
+        rootCanvas.overrideSorting = true;
+        rootCanvas.sortingOrder = 500;
     }
 
     private void BuildInterface()
     {
-        rootCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
-        rootCanvas.sortingOrder = 500;
+        ConfigureFullscreenCanvas();
 
         var scaler = GetComponent<CanvasScaler>();
         scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
@@ -197,7 +235,7 @@ public sealed class PaintEditorCanvas : MonoBehaviour
         }
         else
         {
-            CreateButton("Make Object", toolbar.transform, new Color32(46, 125, 88, 255),
+            CreateButton("Submit Wheel", toolbar.transform, new Color32(46, 125, 88, 255),
                 () => CreateWorldDrawingGameObject(), 112f);
             AddSpacer(toolbar.transform, 8f);
         }
@@ -387,10 +425,6 @@ public sealed class PaintEditorCanvas : MonoBehaviour
             return null;
         }
 
-        // This is the point where the world GameObject is created.
-        var worldDrawing = new GameObject("Black Pen Drawing");
-        worldDrawing.transform.position = worldSpawnPosition;
-
         const int transparentPadding = 2;
         var croppedWidth = penBounds.width + transparentPadding * 2;
         var croppedHeight = penBounds.height + transparentPadding * 2;
@@ -412,6 +446,17 @@ public sealed class PaintEditorCanvas : MonoBehaviour
         };
         worldTexture.SetPixels32(croppedPixels);
         worldTexture.Apply(false);
+
+        if (TrySubmitDrawing(worldTexture.EncodeToPNG()))
+        {
+            Destroy(worldTexture);
+            ClearDrawing();
+            return null;
+        }
+
+        // This is the point where the legacy local world GameObject is created.
+        var worldDrawing = new GameObject("Black Pen Drawing");
+        worldDrawing.transform.position = worldSpawnPosition;
 
         var sprite = Sprite.Create(
             worldTexture,
@@ -447,46 +492,39 @@ public sealed class PaintEditorCanvas : MonoBehaviour
         return worldDrawing;
     }
 
-    /// <summary>Recreates the same world drawing on the authoritative host.</summary>
-    public GameObject CreateWorldDrawingFromPng(byte[] png)
+    private bool TrySubmitDrawing(byte[] pngData)
     {
-        if (png == null || png.Length == 0)
-            return null;
+        if (DrawingSubmitted == null)
+            return false;
 
-        var texture = new Texture2D(2, 2, TextureFormat.RGBA32, false)
+        var accepted = false;
+        foreach (var callback in DrawingSubmitted.GetInvocationList())
         {
-            name = "Networked Black Pen Drawing Texture",
-            filterMode = FilterMode.Bilinear,
-            wrapMode = TextureWrapMode.Clamp
-        };
+            if (callback is not Func<byte[], bool> handler)
+                continue;
 
-        if (!texture.LoadImage(png, false))
-        {
-            Destroy(texture);
-            return null;
+            try
+            {
+                accepted |= handler(pngData);
+            }
+            catch (Exception exception)
+            {
+                Debug.LogException(exception, this);
+            }
         }
 
-        var worldDrawing = new GameObject("Networked Black Pen Drawing");
-        worldDrawing.transform.position = worldSpawnPosition;
-        var sprite = Sprite.Create(
-            texture,
-            new Rect(0f, 0f, texture.width, texture.height),
-            new Vector2(0.5f, 0.5f),
-            worldPixelsPerUnit,
-            0,
-            SpriteMeshType.Tight,
-            Vector4.zero,
-            true);
-        sprite.name = "Networked Black Pen Drawing Sprite";
+        return accepted;
+    }
 
-        var spriteRenderer = worldDrawing.AddComponent<SpriteRenderer>();
-        spriteRenderer.sprite = sprite;
-        spriteRenderer.sortingOrder = worldSortingOrder;
-
-        var polygonCollider = worldDrawing.AddComponent<PolygonCollider2D>();
-        CopySpritePhysicsShape(sprite, polygonCollider);
-        worldDrawing.AddComponent<Rigidbody2D>();
-        return worldDrawing;
+    private void ClearDrawing()
+    {
+        Array.Fill(markerPixels, Transparent);
+        Array.Fill(penPixels, Transparent);
+        undoHistory.Clear();
+        currentStroke = null;
+        currentStrokeIndices = null;
+        drawing = false;
+        ApplyPixels();
     }
 
     private bool TryGetVisiblePenBounds(out RectInt bounds)
