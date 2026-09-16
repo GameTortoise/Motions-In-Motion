@@ -46,7 +46,7 @@ namespace PurrNet.Lobby
         [SerializeField] private TMP_Text _microphoneText;
         [SerializeField] private GameObject _microphoneFeature;
         [Space]
-        [SerializeField] private float _timeToStartGame = 3f;
+        [SerializeField, Min(1)] private int _minimumPlayersToStart = 5;
         [SerializeField] private TMP_Text _lobbyStatus;
         [SerializeField] private TMP_Text _lobbyStatusDetails;
         [Space]
@@ -56,8 +56,6 @@ namespace PurrNet.Lobby
         private ILobby _lobby;
         private bool _lobbyConnected;
         private bool _hasLocalMicEnabled;
-        private float _allReadyTimer;
-        private bool _wasAllReady;
         private bool _gameStarted;
         private bool _closingLobby;
         private string _localPlayerId;
@@ -79,11 +77,9 @@ namespace PurrNet.Lobby
             ClearPlayerEntries();
 
             _orchestrator = orchestrator;
-            _allReadyTimer = _timeToStartGame;
             _readyStateInitialized = false;
             _lobbyEventsUnsubscribed = false;
             _gameStarted = false;
-            _wasAllReady = false;
             _closingLobby = false;
             _localPlayerId = lobby?.localPlayer?.id;
             ResetStatusLabels();
@@ -162,73 +158,24 @@ namespace PurrNet.Lobby
         }
 #endif
 
-        private void Update()
+        private bool CanHostStartGame()
         {
-            if (_lobby?.localPlayer == null || !_lobby.localPlayer.isOwner)
-                return;
+            if (_lobby?.localPlayer == null || !_lobby.localPlayer.isOwner || _gameStarted)
+                return false;
 
-            if (_gameStarted)
-                return;
-
-            // The lobby owner is the TV/display authority, not a participating player.
-            bool hasPlayer = false;
-            bool allReady = true;
-
+            int participantCount = 0;
             foreach (var player in _lobby.players)
             {
                 if (player.isOwner)
                     continue;
 
-                hasPlayer = true;
+                participantCount++;
                 if (!player.isReady)
-                {
-                    allReady = false;
-                    break;
-                }
+                    return false;
             }
 
-            allReady &= hasPlayer;
-
-            if (allReady)
-            {
-                if (!_wasAllReady)
-                {
-                    _lobbyStatus.text = "STARTING GAME";
-                    _lobby.lobbyData.SetData(LOBBY_STATUS_STRING, _lobbyStatus.text);
-                    _wasAllReady = true;
-                }
-
-                _allReadyTimer -= Time.deltaTime;
-
-                if (_allReadyTimer < 0)
-                {
-                    _gameStarted = true;
-                    _allReadyTimer = 0f;
-
-                    _lobbyStatusDetails.text = $"LOADING ...";
-                    _lobby.lobbyData.SetData(LOBBY_STATUS_DETAILS_STRING, _lobbyStatusDetails.text);
-
-                    StartGame();
-                    return;
-                }
-
-                int secondsLeft = Mathf.CeilToInt(_allReadyTimer);
-                var text = $"{secondsLeft} ...";
-
-                if (text != _lobbyStatusDetails.text)
-                {
-                    _lobbyStatusDetails.text = text;
-                    _lobby.lobbyData.SetData(LOBBY_STATUS_DETAILS_STRING, text);
-                }
-            }
-            else if (_wasAllReady)
-            {
-                _wasAllReady = false;
-                _allReadyTimer = _timeToStartGame;
-                ResetStatusLabels();
-                _lobby.lobbyData.SetData(LOBBY_STATUS_STRING, _lobbyStatus.text);
-                _lobby.lobbyData.SetData(LOBBY_STATUS_DETAILS_STRING, _lobbyStatusDetails.text);
-            }
+            // The lobby owner is the TV/display authority and does not count as a player.
+            return participantCount >= _minimumPlayersToStart;
         }
 
         private void StartGame()
@@ -293,10 +240,9 @@ namespace PurrNet.Lobby
         private void ResetStartState()
         {
             ResetStatusLabels();
-            _wasAllReady = false;
             _gameStarted = false;
-            _allReadyTimer = _timeToStartGame;
-            _lobby?.localPlayer?.SetReady(false);
+            if (_lobby != null)
+                UpdateLocalPlayerData(_lobby);
         }
 
         public void ToggleMicrophone()
@@ -406,7 +352,18 @@ namespace PurrNet.Lobby
         {
             bool localIsDisplayHost = lobby.localPlayer?.isOwner == true;
             if (_readyButton)
-                _readyButton.gameObject.SetActive(!localIsDisplayHost);
+            {
+                _readyButton.gameObject.SetActive(true);
+                _readyButton.interactable = !localIsDisplayHost || CanHostStartGame();
+            }
+
+            if (localIsDisplayHost)
+            {
+                _readyButtonText.text = "Start Game";
+                ThemeColors.Set(_readyButton, _readyColor, _readyHover, _readyColorTone, _readyHoverTone);
+                ThemeColors.Set(_readyButtonText, _readyTextColor);
+                return;
+            }
 
             bool localPlayerReady = lobby.localPlayer?.isReady == true;
 
@@ -432,7 +389,31 @@ namespace PurrNet.Lobby
                 return;
             }
 
+            if (_lobby.localPlayer.isOwner)
+            {
+                TryStartGame();
+                return;
+            }
+
             _lobby.localPlayer.SetReady(!_lobby.localPlayer.isReady);
+        }
+
+        private void TryStartGame()
+        {
+            // Revalidate on the host at click time; the disabled button is only presentation.
+            if (!CanHostStartGame())
+            {
+                UpdateLocalPlayerData(_lobby);
+                return;
+            }
+
+            _gameStarted = true;
+            _readyButton.interactable = false;
+            _lobbyStatus.text = "STARTING GAME";
+            _lobbyStatusDetails.text = "LOADING ...";
+            _lobby.lobbyData.SetData(LOBBY_STATUS_STRING, _lobbyStatus.text);
+            _lobby.lobbyData.SetData(LOBBY_STATUS_DETAILS_STRING, _lobbyStatusDetails.text);
+            StartGame();
         }
 
         private void OnKickPlayer(IPlayer target)
