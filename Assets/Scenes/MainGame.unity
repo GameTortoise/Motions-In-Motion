@@ -320,9 +320,9 @@ Camera:
   m_NormalizedViewPortRect:
     serializedVersion: 2
     x: 0
-    y: -0.3
+    y: -0.71
     width: 1
-    height: 0.9
+    height: 2.63
   near clip plane: 0.1
   far clip plane: 1000
   field of view: 60
@@ -576,9 +576,9 @@ Camera:
   m_NormalizedViewPortRect:
     serializedVersion: 2
     x: 0
-    y: -0.3
+    y: -0.71
     width: 1
-    height: 0.9
+    height: 2.63
   near clip plane: 0.1
   far clip plane: 1000
   field of view: 60
@@ -4984,11 +4984,6 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 201ea92e03ac4494bb5424c3e284c6fb, type: 3}
---- !u!224 &1662757147 stripped
-RectTransform:
-  m_CorrespondingSourceObject: {fileID: 121000000000002, guid: 201ea92e03ac4494bb5424c3e284c6fb, type: 3}
-  m_PrefabInstance: {fileID: 1662757146}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1787493462
 GameObject:
   m_ObjectHideFlags: 0
@@ -5403,7 +5398,7 @@ RectTransform:
   m_GameObject: {fileID: 9100000001}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 0, y: 0, z: 0}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 9305002}
@@ -5603,5 +5598,5 @@ SceneRoots:
   - {fileID: 1787493463}
   - {fileID: 1908478822}
   - {fileID: 459768754}
-  - {fileID: 1662757147}
+  - {fileID: 1662757146}
   - {fileID: 9700000002}
