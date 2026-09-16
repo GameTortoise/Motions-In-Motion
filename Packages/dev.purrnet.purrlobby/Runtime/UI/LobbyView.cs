@@ -170,16 +170,24 @@ namespace PurrNet.Lobby
             if (_gameStarted)
                 return;
 
-            bool allReady = _lobby.players.Count > 0;
+            // The lobby owner is the TV/display authority, not a participating player.
+            bool hasPlayer = false;
+            bool allReady = true;
 
             foreach (var player in _lobby.players)
             {
+                if (player.isOwner)
+                    continue;
+
+                hasPlayer = true;
                 if (!player.isReady)
                 {
                     allReady = false;
                     break;
                 }
             }
+
+            allReady &= hasPlayer;
 
             if (allReady)
             {
@@ -350,9 +358,29 @@ namespace PurrNet.Lobby
 
         private void RenderPlayerList(ILobby lobby)
         {
+            // Keep the lobby owner connected, but never render it as a player. This
+            // also handles host migration by revealing the old owner and hiding the new one.
+            List<IPlayer> entriesToHide = null;
+            foreach (var pair in _uiPlayerEntry)
+            {
+                if (!pair.Key.isOwner)
+                    continue;
+
+                entriesToHide ??= new List<IPlayer>();
+                entriesToHide.Add(pair.Key);
+                if (pair.Value)
+                    Destroy(pair.Value.gameObject);
+            }
+
+            if (entriesToHide != null)
+            {
+                foreach (var player in entriesToHide)
+                    _uiPlayerEntry.Remove(player);
+            }
+
             foreach (var player in lobby.players)
             {
-                if (!_uiPlayerEntry.ContainsKey(player))
+                if (!player.isOwner && !_uiPlayerEntry.ContainsKey(player))
                     CreatePlayerEntry(player);
             }
 
@@ -376,6 +404,10 @@ namespace PurrNet.Lobby
 
         private void UpdateLocalPlayerData(ILobby lobby)
         {
+            bool localIsDisplayHost = lobby.localPlayer?.isOwner == true;
+            if (_readyButton)
+                _readyButton.gameObject.SetActive(!localIsDisplayHost);
+
             bool localPlayerReady = lobby.localPlayer?.isReady == true;
 
             if (!_readyStateInitialized || _wasReady != localPlayerReady)
@@ -450,6 +482,8 @@ namespace PurrNet.Lobby
 
         private void OnOwnerChanged(IPlayer host)
         {
+            RenderPlayerList(_lobby);
+
             if (_lobbyConnected && _lobbyConnection)
                 _lobbyConnection.OnHostChanged(_lobby, host, host == _lobby.localPlayer);
         }
