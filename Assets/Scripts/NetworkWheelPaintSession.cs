@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using PurrNet;
 using PurrNet.Transports;
 using UnityEngine;
@@ -7,8 +8,16 @@ using UnityEngine;
 [Serializable]
 public sealed class WheelDrawingUpload
 {
+    public uint submissionId;
     public bool defendant;
     public byte[] pngData;
+}
+
+[Serializable]
+public sealed class WheelDrawingReceipt
+{
+    public uint submissionId;
+    public bool accepted;
 }
 
 [Serializable]
@@ -20,7 +29,9 @@ public sealed class WheelDrawingState
 }
 
 [RegisterNetworkType(typeof(WheelDrawingUpload))]
+[RegisterNetworkType(typeof(WheelDrawingReceipt))]
 [RegisterNetworkType(typeof(WheelDrawingState))]
+[DefaultExecutionOrder(-1000)]
 [DisallowMultipleComponent]
 public sealed class NetworkWheelPaintSession : MonoBehaviour
 {
@@ -45,9 +56,15 @@ public sealed class NetworkWheelPaintSession : MonoBehaviour
     private uint otherRevision;
     private uint appliedDefendantRevision;
     private uint appliedOtherRevision;
+    private uint nextSubmissionId;
+    private uint pendingSubmissionId;
+    private byte[] pendingDrawing;
+    private float nextSubmissionRetryTime;
+    private readonly Dictionary<PlayerID, uint> lastAcceptedSubmission = new();
     private bool serverSubscribed;
     private bool clientSubscribed;
-    private bool playerEventsSubscribed;
+    private bool presentationConfigured;
+    private bool editorPresentationVisible;
     private bool instantiatedLocalEditor;
     private Transform localEditorOriginalParent;
     private GameObject editorBackgroundCamera;
@@ -68,7 +85,6 @@ public sealed class NetworkWheelPaintSession : MonoBehaviour
 
         if (manager != null)
         {
-            RemovePlayerEventSubscriptions();
             manager.UnregisterEvents(OnNetworkStarted, OnNetworkStopped);
             RemoveServerSubscriptions();
             RemoveClientSubscriptions();
@@ -85,6 +101,7 @@ public sealed class NetworkWheelPaintSession : MonoBehaviour
             otherRevision = 0;
             latestDefendantDrawing = null;
             latestOtherDrawing = null;
+            lastAcceptedSubmission.Clear();
             manager.Subscribe<WheelDrawingUpload>(OnDrawingUploaded, true);
             manager.onPlayerLoadedScene += OnPlayerLoadedScene;
             serverSubscribed = true;
@@ -95,8 +112,8 @@ public sealed class NetworkWheelPaintSession : MonoBehaviour
             appliedDefendantRevision = 0;
             appliedOtherRevision = 0;
             manager.Subscribe<WheelDrawingState>(OnDrawingStateReceived, false);
+            manager.Subscribe<WheelDrawingReceipt>(OnDrawingReceiptReceived, false);
             clientSubscribed = true;
-            AddPlayerEventSubscriptions();
             ConfigureLocalPresentation();
         }
     }
@@ -107,10 +124,22 @@ public sealed class NetworkWheelPaintSession : MonoBehaviour
             RemoveServerSubscriptions();
         else
         {
-            RemovePlayerEventSubscriptions();
             RemoveClientSubscriptions();
             RestoreRegularPresentation();
         }
+    }
+
+    private void LateUpdate()
+    {
+        if (manager == null || !manager.isClient)
+            return;
+
+        var shouldShowEditor = !manager.isServer;
+        if (!presentationConfigured || editorPresentationVisible != shouldShowEditor)
+            ConfigureLocalPresentation();
+
+        if (pendingDrawing != null && !manager.isServer && Time.unscaledTime >= nextSubmissionRetryTime)
+            SendPendingDrawing();
     }
 
     private void ConfigureLocalPresentation()
@@ -118,10 +147,11 @@ public sealed class NetworkWheelPaintSession : MonoBehaviour
         if (manager == null || !manager.isClient)
             return;
 
-        // Planned-host is available before both sides finish connecting, preventing
-        // a one-frame editor/main-screen role swap during lobby startup.
-        var isLobbyHost = manager.isHost || manager.isPlannedHost;
-        var showEditor = !isLobbyHost;
+        // In this lobby setup the lobby host owns the PurrNet server. Using the
+        // actual server state cleanly separates it from every client-only joiner.
+        var showEditor = !manager.isServer;
+        presentationConfigured = true;
+        editorPresentationVisible = showEditor;
         SetRegularPresentationVisible(!showEditor);
 
         if (!showEditor)
@@ -168,55 +198,54 @@ public sealed class NetworkWheelPaintSession : MonoBehaviour
         if (manager == null || !manager.isClient || !IsValidDrawing(pngData))
             return false;
 
-        var upload = new WheelDrawingUpload
-        {
-            defendant = defendant,
-            pngData = pngData
-        };
-
         if (manager.isHost)
-            OnDrawingUploaded(manager.localPlayer, upload, true);
+        {
+            OnDrawingUploaded(manager.localPlayer, new WheelDrawingUpload
+            {
+                submissionId = ++nextSubmissionId,
+                defendant = defendant,
+                pngData = pngData
+            }, true);
+        }
         else
-            manager.SendToServer(upload, Channel.ReliableOrdered);
+        {
+            pendingSubmissionId = ++nextSubmissionId;
+            pendingDrawing = pngData;
+            SendPendingDrawing();
+        }
         return true;
     }
 
-    private void AddPlayerEventSubscriptions()
+    private void SendPendingDrawing()
     {
-        if (playerEventsSubscribed || manager == null)
+        if (manager == null || !manager.isClient || manager.isServer || pendingDrawing == null)
             return;
 
-        playerEventsSubscribed = true;
-        manager.onPlayerJoined += OnPlayerCountChanged;
-        manager.onPlayerLeft += OnPlayerCountChanged;
-    }
-
-    private void RemovePlayerEventSubscriptions()
-    {
-        if (!playerEventsSubscribed || manager == null)
-            return;
-
-        playerEventsSubscribed = false;
-        manager.onPlayerJoined -= OnPlayerCountChanged;
-        manager.onPlayerLeft -= OnPlayerCountChanged;
-    }
-
-    private void OnPlayerCountChanged(PlayerID player, bool isReconnect, bool asServer)
-    {
-        if (!asServer)
-            ConfigureLocalPresentation();
-    }
-
-    private void OnPlayerCountChanged(PlayerID player, bool asServer)
-    {
-        if (!asServer)
-            ConfigureLocalPresentation();
+        manager.SendToServer(new WheelDrawingUpload
+        {
+            submissionId = pendingSubmissionId,
+            defendant = defendant,
+            pngData = pendingDrawing
+        }, Channel.ReliableOrdered);
+        nextSubmissionRetryTime = Time.unscaledTime + 2f;
     }
 
     private void OnDrawingUploaded(PlayerID sender, WheelDrawingUpload upload, bool asServer)
     {
-        if (!asServer || upload == null || !IsValidDrawing(upload.pngData))
+        if (!asServer || upload == null)
             return;
+
+        if (lastAcceptedSubmission.TryGetValue(sender, out var acceptedId) && acceptedId == upload.submissionId)
+        {
+            SendDrawingReceipt(sender, upload.submissionId, true);
+            return;
+        }
+
+        if (!IsValidDrawing(upload.pngData))
+        {
+            SendDrawingReceipt(sender, upload.submissionId, false);
+            return;
+        }
 
         var state = new WheelDrawingState
         {
@@ -230,13 +259,34 @@ public sealed class NetworkWheelPaintSession : MonoBehaviour
         else
             latestOtherDrawing = state;
 
-        manager.SendToAll(state, Channel.ReliableOrdered);
-
-        // A host runs both server and client in one process. Apply explicitly here so
-        // its rendered cars update even if the transport does not loop broadcasts
-        // back through the local client connection.
-        if ((manager.isHost || manager.isPlannedHost) && !ApplyDrawing(state))
+        // Install on the authoritative server scene first. In the lobby-host setup
+        // this is the exact scene feeding the host's RenderTexture cameras.
+        var installed = ApplyDrawing(state);
+        if (!installed)
             Debug.LogError("The host received a wheel drawing but could not install it on the target car.", this);
+
+        manager.SendToAll(state, Channel.ReliableOrdered);
+        lastAcceptedSubmission[sender] = upload.submissionId;
+        SendDrawingReceipt(sender, upload.submissionId, installed);
+    }
+
+    private void SendDrawingReceipt(PlayerID player, uint submissionId, bool accepted)
+    {
+        manager.Send(player, new WheelDrawingReceipt
+        {
+            submissionId = submissionId,
+            accepted = accepted
+        }, Channel.ReliableOrdered);
+    }
+
+    private void OnDrawingReceiptReceived(PlayerID sender, WheelDrawingReceipt receipt, bool asServer)
+    {
+        if (asServer || receipt == null || receipt.submissionId != pendingSubmissionId)
+            return;
+
+        pendingDrawing = null;
+        if (!receipt.accepted)
+            Debug.LogError("The server received the wheel drawing but could not install it on the host car.", this);
     }
 
     private void OnDrawingStateReceived(PlayerID sender, WheelDrawingState state, bool asServer)
@@ -303,10 +353,14 @@ public sealed class NetworkWheelPaintSession : MonoBehaviour
 
         clientSubscribed = false;
         manager.Unsubscribe<WheelDrawingState>(OnDrawingStateReceived, false);
+        manager.Unsubscribe<WheelDrawingReceipt>(OnDrawingReceiptReceived, false);
+        pendingDrawing = null;
     }
 
     private void RestoreRegularPresentation()
     {
+        presentationConfigured = false;
+        editorPresentationVisible = false;
         SetRegularPresentationVisible(true);
 
         HideLocalEditor();
